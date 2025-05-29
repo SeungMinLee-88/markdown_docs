@@ -1,30 +1,29 @@
 # - 프로젝트 개요
 예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프로트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 프론트 부분에 대해 중점적으로 다루었다.
-
-
+<br /><br />
 # - 개발기간
-- 25.04 ~ 25.05(약 1.5개월)
-
+- 25.04 ~ 25.05(약 1.5개월)\
+<br /><br />
 # - 개발환경
 - node.js v18.20.5
 - react v19.0.0
 - Next.js v15.2.4
 - Semantic UI React, Axios, FullCalendar 등 라이브러리
-
+<br /><br />
 # - 주요기능
 - 사용자인증
 기본 사용자 인증, JWT 토큰 발급, 재발급localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 값 전달 처리
-- 게시판
+- 게시판 :\
 기본 게시판 CRUD 기능 및 검색, Semantic UI를통한 페이징 처리, react reducer를 통한 검색 기능, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
-- 코멘트
+- 코멘트 :\
 코멘트 CRUD, 코멘트 트리 UI 표현
-- 예약
+- 예약 :\
 특정일자 시간대 예약 및 수정, 사용자 권한에 따른 예약 제한,
 FullCalendar 라이브러리를 통한 달력 UI 표현, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
-
+<br /><br />
 # - 특이사항
 - Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router부터 사용하는 것이 추천되는 것으로 보여 Pages Router를 통해 구현. 향후 App Router 마이그레이션 학습 필요
-(참고 -  
+(참고 -\
 <https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>,  <https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>,   <https://www.reddit.com/r/nextjs/comments/1gdxcg5/why_do_you_still_prefer_page_router_over_app/>)
 
 - 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현
@@ -39,7 +38,7 @@ FullCalendar 라이브러리를 통한 달력 UI 표현, react useRef를 이용�
 ### 1.1 인증처리
 사용자 인증 및 접근 제어는 Spring Security와 JWT 라이브러리를 통해서 구현 하였으며 로그인 성공시 localStorage, sessionStorage에 인증과 권한 확인에 필요한 값을 저장한다.
 
-![Image](https://github.com/user-attachments/assets/3f662fb3-ee4f-4d1a-824c-794acced0f20)
+![Image](https://github.com/user-attachments/assets/1ac1a24f-2875-46c7-8d48-56429dad952b)
 
 login.js
 ```js
@@ -268,12 +267,11 @@ Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해�
  http
             .authorizeHttpRequests((auth) -> auth
                     .requestMatchers(
-                            "/api/v1/user/login"
+                             "/"
+                            , "/join"
+                            ,"/api/v1/user/login"
                             ,"/api/v1/user/reIssueToken"
-                            ,  "/"
-                            , "/join").permitAll()
-                    .requestMatchers(
-                            "/api/v1/board/**"
+                            , "/api/v1/board/**"
                             , "/api/v1/board/detal/*"
                             , "/api/v1/comment/commentList"
                             , "/api/v1/user/userJoin"
@@ -317,4 +315,99 @@ async function chkAuthor(){
         // 페이지 렌더링 시 권한 확인
     }, []);
 ```
+- ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시
+
+![Image](https://github.com/user-attachments/assets/1ac1a24f-2875-46c7-8d48-56429dad952b)
+
+## 2. 게시판
+### 1.1 기본기능 및 페이징, 검색 기능
+게시판 부분은 기본 CRUD 기능을 구현 하였으며 페이징 처리를 Semantic UI의 Pagination 컴포넌트를 통해 구현 하였다.
+
+![Image](https://github.com/user-attachments/assets/7a3b074d-e669-45a1-8edb-534ca3628825)
+
+```js
+<Pagination
+          /* activePage={currentPage} */
+          boundaryRange={0}
+          defaultActivePage={1}
+          ellipsisItem={null}
+          firstItem={null}
+          lastItem={null}
+          siblingRange={1}
+          totalPages={TotalPage}
+          onPageChange={(_, { activePage }) => goToPage(activePage)}
+        />
+        // Pagination Props 값을 설정하면 원하는 형태의 페이징 화면을 보여 줄 수 있다.
+```
+또한 검색기능에는 react reducer를 사용해 구현 해보았다.
+```js
+const [state, dispatch] = React.useReducer(searchReducer, initialState);
+  const { loading, value, searchKey } = state;
+  ...중략
+  const timeoutRef = React.useRef()
+  const handleSearchChange = (e, data) => {
+    clearTimeout(timeoutRef.current)
+    dispatch({ type: 'START_SEARCH', query: data.value })
+    // reducer 호출
+    changeSearchValue(data.value);
+    setCurrentPage(1);
+    timeoutRef.current = setTimeout(() => {
+      if (data.value.length === 0) {
+        dispatch({ type: 'CLEAN_QUERY' })
+        return
+      }
+      dispatch({
+        type: 'FINISH_SEARCH',
+      })
+    }, 300)
+  }
+  const handleSearchKey = (e) => {
+    dispatch({ type: 'UPDATE_SELECTION', query: e.target.value });
+    // reducer 호출
+    changeSearchKey(e.target.value);
+    setCurrentPage(1);
+  }
+  ...중략
+    <select
+      value={searchKey}
+      onChange={handleSearchKey} style={{width: 100}}>
+      <option value="boardTitle">Title</option>
+      <option value="boardWriter">Writer</option>
+    </select>
+      
+      <Search
+          loading={loading}
+          placeholder='Search...'
+          value={value}
+          onSearchChange={handleSearchChange}
+          showNoResults={false}
+        />
+   </div>
+```
+검색 필드, 텍스트가 변경 시 handleSearchChange에서 이벤트를 처리하며 handleSearchChange는 searchReducer로 이벤트 유형 및 값 전달 한다.
+```js
+function searchReducer(state, action) {
+  // 호출된 reducer에서 action.type에 따라 분기하여 
+  switch (action.type) {
+    case 'CLEAN_QUERY':
+      return initialState
+    case 'START_SEARCH':
+      return { ...state, loading: true, value: action.query }
+    case 'FINISH_SEARCH':
+      return { ...state, loading: false}
+    case 'UPDATE_SELECTION':
+      return { ...state, searchKey: action.query }
+    default:
+      throw new Error()
+  }
+}
+const initialState = {
+  loading: false,
+  value: '',
+  searchKey: ''
+}
+```
+reducer를 통해 state를 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다.\
+참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
+
 

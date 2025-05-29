@@ -385,6 +385,9 @@ const [state, dispatch] = React.useReducer(searchReducer, initialState);
    </div>
 ```
 검색 필드, 텍스트가 변경 시 handleSearchChange에서 이벤트를 처리하며 handleSearchChange는 searchReducer로 이벤트 유형 및 값 전달 한다.
+
+![Image](https://github.com/user-attachments/assets/7a3b074d-e669-45a1-8edb-534ca3628825)
+
 ```js
 function searchReducer(state, action) {
   // 호출된 reducer에서 action.type에 따라 분기하여 
@@ -411,3 +414,28 @@ reducer를 통해 state를 업데이트하는 로직들을 통합하여 관리 �
 참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
 
 
+### 1.1 글쓰기, 수정 특이사항
+게시판 글쓰기, 수정의 경우 게시글에 첨부 파일을 첨부 하고 이미지 표시, 다운로드 할 수 있는 기능을 추가 했으며 파일 업로드 기능에 react의 useRef를 사용하여 react가 관리하는 DOM 노드에 접근하는 기능을 간단히 구현 해보았다.
+![Image](h)
+
+![Image](h)
+
+- BoardWrite.js
+```js
+const fileInputRef1 = useRef();
+...중략
+
+<Form.Field>
+              <input type="file" name='files' multiple onChange={fileChange} ref={fileInputRef1} hidden/>
+              {renderFileList()}
+              <button type="button"
+                  name = "fileBtn"
+                  className="ui icon left labeled button"
+                  labelposition="left"
+                  icon="file"
+                  onClick={() => fileInputRef1.current.click()}
+                ><i aria-hidden="true" className="file icon"></i>Choose File</button>
+              </Form.Field>
+```
+file input을 hidden으로 숨김 처리하고 fileInputRef1 선언 후 선언한 fileInputRef1 &lt;input ref={fileInputRef1}> 처럼 전달하여
+fileInputRef1.current에서 input DOM 노드 읽게하여 fileInputRef1.current.click() 부분으로 click 이벤트를 발생 시키는 방식으로 구혀하였다.

@@ -741,6 +741,30 @@ img
 
 - Reserve.js
 ``` js
+const calendarRef = createRef(null);
+
+... 중략
+
+// calendarRef를 통해 FullCalendar 클래스 컴포넌트 객체에 접근
+const handleNextButtonClick = () => {
+if (calendarRef.current) {
+  const currentMonth = moment(calendarRef.current.calendar.currentData.currentDate).format('YYYYMM');
+  const calendarApi = calendarRef.current.getApi();
+  calendarApi.next();
+  setToolBarState(parseInt(currentMonth)+1);
+}
+};
+const handlePrevButtonClick = () => {
+if (calendarRef.current) {
+  const currentMonth = moment(calendarRef.current.calendar.currentData.currentDate).format('YYYYMM');
+  const calendarApi = calendarRef.current.getApi();
+  calendarApi.prev();
+  setToolBarState(parseInt(currentMonth)-1);
+}
+};
+
+... 중략
+
 <FullCalendar
     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
 
@@ -759,6 +783,7 @@ img
         click: handleNextButtonClick
       }
     }}
+    // next, prev 버튼을 클릭 시 예약 년월 state를 변경 해주기 위해  customButtons 추가
     ref={calendarRef}
     initialView='dayGridMonth'
     select={handleSelectedDates}
@@ -779,4 +804,71 @@ img
     />
 ```
 예약 페이지를 구현하기 위해 직접 달력 UI를 만들지 않고 오픈 소스 캘린더 라이브러리인 FullCalendar를 이용해 보았다 Premium 버전 등이 있지만 Standard 버전으로 충분 하기에 Standard 버전으로 구성 하였다.
+FullCalendar는 next, prev 버튼에 대한 이벤트 props가 없으므로 customButtons
+를 만들어 headerToolbar에 버튼이 보이도록 하였고 calendarRef를 선언하여 버튼 클릭 시 FullCalendar 클래스 컴포넌트에 접근하여 DOM 오브젝트를 제어하고 
+setToolBarState를 통해 리렌더링을 발생 시켜 다음월, 이전월의 예약 데이터를 가져오고 화면에 보여 줄 수 있도록 하였다.
+
+
+- Reserve.js
+```js
+
+for (var timeKey in response.data[responseKey]["reserveTime"]) {
+  reserveTotalList.push(
+  {
+    id: response.data[responseKey]["id"],
+    title: response.data[responseKey]["reserveReason"],
+    reserveReason: response.data[responseKey]["reserveReason"],
+    reserveDate: response.data[responseKey]["reserveDate"],
+    hallId: response.data[responseKey]["hallId"],
+    reservePeriod: response.data[responseKey]["reservePeriod"],
+    start: moment(response.data[responseKey]["reserveDate"]).format("YYYY-MM-DD")+"T"+response.data[responseKey]["reserveTime"][timeKey]["time"]["time"]+":00:00",
+    end: moment(response.data[responseKey]["reserveDate"]).format("YYYY-MM-DD")+"T"+response.data[responseKey]["reserveTime"][timeKey]["time"]["time"]+":00:00",
+    time: response.data[responseKey]["reserveTime"][timeKey]["time"]["time"],
+    userId: response.data[responseKey]["userId"],
+    allDay: false
+    }
+    );
+}
+```
+서버로 부터 리턴 받은 예약 리스트를 FullCalendar를 events prop에 할당 가능한 형태로 가공하여 처리하였다.
+
+- Reserve.js
+```js
+const [times, dispatch] = React.useReducer(reserveTimeReducer, initialTimes); 
+
+useEffect(() => {
+  getData();
+  formMode === "update" ? getDetailData() : 
+  dispatch({
+    type: 'INITIAL',
+    times: initialTimes
+  });
+  // 최초 렌더링 시 action.type INITIAL로 reducer 호출
+  setReserveDetail("");
+  clearTextInput();
+
+}, [selectDate, reserveDetailId]);
+
+function reserveTimeReducer(times, action) {
+  switch (action.type) {
+    case 'INITIAL':
+      return action.times;
+    case 'CHECK':
+      return [...times, action.timeId];
+    case 'UNCHECK':
+      return times.filter(t => t !== action.timeId);
+    default:
+      throw new Error()
+  }
+}
+
+
+
+
+
+
+
+
+
+
 

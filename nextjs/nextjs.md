@@ -12,22 +12,24 @@
 <br /><br />
 # - 주요기능
 - 사용자인증
-기본 사용자 인증, JWT 토큰 발급, 재발급localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 값 전달 처리
+기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 값 전달 처리
 - 게시판 :\
 기본 게시판 CRUD 기능 및 검색, Semantic UI를통한 페이징 처리, react reducer를 통한 검색 기능, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
 - 코멘트 :\
 코멘트 CRUD, 코멘트 트리 UI 표현
 - 예약 :\
 특정일자 시간대 예약 및 수정, 사용자 권한에 따른 예약 제한,
-FullCalendar 라이브러리를 통한 달력 UI 표현, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
+FullCalendar 라이브러리를 통한 달력 UI 표현, react createRef를 이용한 클래스 컴포넌트 DOM 오브젝트 처리 등
 <br /><br />
 # - 특이사항
-- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router부터 사용하는 것이 추천되는 것으로 보여 Pages Router를 통해 구현. 향후 App Router 마이그레이션 학습 필요
+- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router부터 사용하는 것이 추천되어 Pages Router를 통해 구현. 향후 App Router 마이그레이션 학습 필요\
 (참고 -\
 <https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>,  <https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>,   <https://www.reddit.com/r/nextjs/comments/1gdxcg5/why_do_you_still_prefer_page_router_over_app/>)
 
-- 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현
-(참고 - <https://www.dhiwise.com/post/the-power-of-nextjs-custom-routes-in-modern-web-development>)
+- 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현\
+참고 -\
+<https://www.dhiwise.com/post/the-power-of-nextjs-custom-routes-in-modern-web-development>\
+<https://medium.com/@farihatulmaria/what-is-the-purpose-of-the-app-js-and-document-js-files-in-a-next-js-application-397f22fed69e>
 - UI는 Semantic UI React 라이브러리를 사용하여 구현
 - 백엔드 부분과 데이터 요청, 응답을 위해 Axios 라이브러리를 사용 
 
@@ -52,7 +54,7 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/login`,
           }
         )
         .then(function (response) {
-
+          //인증 성공 시 localStorage, sessionStorage 인증 정보를 저장한다.
           if (response.headers.access) {
             localStorage.setItem("access", response.headers.access);
             window.sessionStorage.setItem("loginId", loginId);
@@ -61,7 +63,6 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/login`,
             setLoginUserId(loginId);
             setLoginUserName(response.headers["username"]);
           }
-          
           alert("Login Success");
           router.push(`/`);
         })
@@ -78,6 +79,7 @@ export default function MyApp({ Component, pageProps }) {
   const [loginUserName, setLoginUserName] = useState("");
   const [reissueResult, setReissueResult] = useState(false);
 ...중략
+// _app.js의 useEffect를 통해 렌더링 시 state setter로 state에 값을 할당한다.
   useEffect(() => {
     setAccessToken(localStorage.getItem("access"));
     setLoginUserId(window.sessionStorage.getItem("loginId"));
@@ -86,19 +88,22 @@ export default function MyApp({ Component, pageProps }) {
 ```
 
 ### 1.3 react Context를 통한 자식 컴포넌트로 값 전달
-useEffect를 통한 state 변경 감지 부분 추가는 프로바이더 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 전달을 구현해 보기 위해서이다.  
+useEffect를 통한 state 변경 감지 부분 추가는 공유 레이아웃 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 전달을 구현해 보기 위해서이다.  
 (<span style="color:red">**Next.js 13 이후 App Router는 Server Component Context Provider를 미지원 하므로 향후 마이그레이션 시에는 Client Component를 이용해 구성해 볼 예정**.</span> )  
-참고 - <https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers>  
+참고 -\
+<https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers>  
 <https://nextjs-ko.org/docs/app/building-your-application/rendering/server-components>
 
 
 - UserContext.js
 ```js
+// createContext로 Context를 상속받는 페이지에서 받을 컨텍스트들을 선언
 import { createContext } from 'react';
 export const UserIdContext = createContext("userIdContext");
 export const UserNameContext = createContext("userNameContext");
 ```
 
+- _app.js
 ```js
   return (
     <div style={{ width: 800, margin: "0 auto" }}>
@@ -843,12 +848,13 @@ useEffect(() => {
     type: 'INITIAL',
     times: initialTimes
   });
-  // 최초 렌더링 시 action.type INITIAL로 reducer 호출
+  // 렌더링 시 action.type INITIAL로 reducer 호출하여 기존 예약과 중복된 시간으로 예약이 불가 하도록 처리
   setReserveDetail("");
   clearTextInput();
 
 }, [selectDate, reserveDetailId]);
 
+// 예약 시간 리스트 action.type 별로 분기하여 처리 후 리턴
 function reserveTimeReducer(times, action) {
   switch (action.type) {
     case 'INITIAL':
@@ -861,8 +867,17 @@ function reserveTimeReducer(times, action) {
       throw new Error()
   }
 }
-
-
+... 중략
+// 예약 시간 체크 시 checked 상태에 따라 다른 actionType으로 dispatch 호출
+const handleTimeChange = (e) => {
+  let actionType = "";
+  e.target.checked ? actionType = "CHECK" : actionType = "UNCHECK";
+  
+  e.target.checked ? setIsChecked(true) : setIsChecked(false);
+  dispatch({ type: actionType, timeId: e.target.tabIndex})
+}
+```
+예약 시간 처리도 게시판의 검색 기능 처럼 react reducer를 이용해 구현 해보 았다. handleTimeChange에서 체크박스의 상태에 따라 times 값을 처리 하도록 하였고 체크된 상태에서 이미 예약이 있는 일자 선택 시 times 값을 false로 처리 하기 위해 useEffect에서 렌더링 시 action.type INITIAL로 reducer를 호출 하도록 하였다.
 
 
 

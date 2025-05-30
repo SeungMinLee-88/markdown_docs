@@ -633,7 +633,7 @@ img
 코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.
 또한 자신이 작성한 코멘트일 경우에만 수정 삭제가 가능 하며 다른 사용자가 작성한 코멘트에는 Reply가 가능 하도록 하였다.
 
-### 1.1 코멘트 리스트
+### 1.2 코멘트 리스트
 
 - 코멘트 리스트 요청 시 리턴 형태
 ```json
@@ -683,6 +683,7 @@ img
     ]
 ```
 
+- CommentList.js
 ```js
 function recursiveMap(commentLists, level, depthVal) {
     commentLists.map((commentList) => {
@@ -691,15 +692,19 @@ function recursiveMap(commentLists, level, depthVal) {
       if(commentList["childrenComments"] !== "" && commentList["childrenComments"] !== null 
         && commentList["childrenComments"].length > 0
       ){
+        // 코멘트에 자식 코멘트 존재 여부 확인
         renderVal.push(<Comment key={commentList["id"]} style={{ paddingLeft: depthStyle }}>
           <CommentContent>
               ... 중략
           </CommentContent>
          </Comment>
          );
-          setCommentListRender([...commentListRender, 
-           renderVal]);
+        setCommentListRender([...commentListRender, 
+          renderVal]);
+        // 배열 전개 구문 ...로 기존 배열에 새로운 렌더링 대상 값을 추가
+        // 배열은 
         recursiveMap(commentList["childrenComments"], "child", depthVal+1)
+        // 자식 코멘트 존재 시 코멘트 depth 값을 증가 시키기고 재귀 호출로 코멘트 리스트를 다시 만든다.
 
       }else{
 
@@ -714,5 +719,64 @@ function recursiveMap(commentLists, level, depthVal) {
     });
   }
 ```
+img
+코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 Reply로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.\
+참고 -\
+<https://ko.react.dev/learn/updating-objects-in-state>\
+<https://ko.react.dev/learn/updating-arrays-in-state>
 
-코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 Reply로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.
+## 4. 예약
+### 4.1 기본기능
+img
+예약 페이지는 주말이 아닌 현재 일자 이후만 예약이 가능 하도록 구성 하였다
+img
+원하는 일자 선택 시 예약자 아이디와 이름은 세션에서 가져오도록 하고 예약 시간을 선택한 만큰 예약 기간 값은 업데이트 된다.
+
+img
+img
+자신이 선택한 예약 리스트 선택 시 예약 시간등을 업데이트 할 수 있으며 리스트가 아닌 일자 선택 시 기존 예약된 시간은 예약이 불가능 하도록 disable 처리 되도도록 하였다.
+또한 예약 리스트는 자신이 예약한 리스트만 보여주도록 구현해 보았다.
+
+### 4.1 FullCalendar 컴포넌트 사용
+
+- Reserve.js
+``` js
+<FullCalendar
+    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+
+    headerToolbar={{
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth'
+    }}
+    customButtons= {{
+      prev: {
+        text: 'prev',
+        click: handlePrevButtonClick
+      },
+      next: {
+        text: 'next',
+        click: handleNextButtonClick
+      }
+    }}
+    ref={calendarRef}
+    initialView='dayGridMonth'
+    select={handleSelectedDates}
+    eventClick={handleEventClick}
+    editable={false}
+    selectable={true}
+    selectMirror={true}
+    dayMaxEvents={true}
+    weekends={true}
+    events={{events: reserveData}}
+    // FullCalendar 컴포넌트를 렌더링하고 events 데이터에는 사용자가 예약한 데이터들을 커스텀하게 만들어 할당해 주었다.
+    eventTimeFormat={{
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }}
+    displayEventEnd={true}
+    />
+```
+예약 페이지를 구현하기 위해 직접 달력 UI를 만들지 않고 오픈 소스 캘린더 라이브러리인 FullCalendar를 이용해 보았다 Premium 버전 등이 있지만 Standard 버전으로 충분 하기에 Standard 버전으로 구성 하였다.
+

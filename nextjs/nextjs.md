@@ -587,12 +587,132 @@ BoardServiceImpl.class
     return fileDTOList;
   }
 ```
-
 게시판의 수정또한 신규로 첨부되는 파일은 FormData 객체에 append하여 처리 되도록 구현 하였고 게시글의 모든 첨부 파일이 삭제되면 게시글의 파일 첨부여부를 false로 업데이트 되도록 하였다.
 
 
 ### 1.3 동적 라우팅을 통한 접근
 ![Image](h)
-게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 동적 세그먼트를 통해 접속이 가능 하도록 하였다.
-참고 -\
-<https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
+게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 동적 세그먼트를 통해 접속이 가능 하도록 하였다.\
+참고 - <https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
+
+## 3. 코멘트
+### 1.1 기본기능 및 페이징
+
+- CommentList.js
+```js
+{userId === commentList["commentWriter"] && <CommentAction commentid={commentList["id"]} onClick={addEdit}>Edit</CommentAction>}
+{userId === commentList["commentWriter"] && <CommentAction commentid={commentList["id"]} onClick={addDelete}>Delete</CommentAction>}
+
+... 중략
+<div>
+  <span>Comments</span>
+  <Divider />
+  {userId !== null &&
+<Form onSubmit={addFormSubmit} reply>
+  <FormField name='commentContents' label='Comments' as="" control='textarea' rows='3' />
+  <button type="submit" className="ui icon primary left labeled button" color="blue">
+  <i aria-hidden="true" className="edit icon"></i>
+  Add Comment
+  </button>
+</Form>
+... 중략
+<Pagination
+  activePage={currentPage}
+  boundaryRange={0}
+  ellipsisItem={null}
+  firstItem={null}
+  lastItem={null}
+  siblingRange={1}
+  totalPages={totalPage}
+  onPageChange={(_, { activePage }) => goToPage(activePage)}
+  
+/>
+
+```
+img
+코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.
+또한 자신이 작성한 코멘트일 경우에만 수정 삭제가 가능 하며 다른 사용자가 작성한 코멘트에는 Reply가 가능 하도록 하였다.
+
+### 1.1 코멘트 리스트
+
+- 코멘트 리스트 요청 시 리턴 형태
+```json
+[
+        {
+            "createdTime": "2025-05-30T11:45:27.858694",
+            "updatedTime": null,
+            "id": 46,
+            "commentWriter": "testid",
+            "commentContents": "1111",
+            "childrenComments": [
+                {
+                    "createdTime": "2025-05-30T11:48:54.690654",
+                    "updatedTime": null,
+                    "id": 53,
+                    "commentWriter": "testid2",
+                    "commentContents": "888",
+                    "childrenComments": [
+                        {
+                            "createdTime": "2025-05-30T11:48:59.234274",
+                            "updatedTime": null,
+                            "id": 54,
+                            "commentWriter": "testid2",
+                            "commentContents": "999",
+                            "childrenComments": []
+                        },
+                        {
+                            "createdTime": "2025-05-30T11:49:21.175973",
+                            "updatedTime": null,
+                            "id": 57,
+                            "commentWriter": "testid",
+                            "commentContents": "ccc",
+                            "childrenComments": []
+                        }
+                    ]
+                },
+                {
+                    "createdTime": "2025-05-30T11:49:04.657264",
+                    "updatedTime": null,
+                    "id": 55,
+                    "commentWriter": "testid2",
+                    "commentContents": "aaa",
+                    "childrenComments": []
+                }
+            ]
+        },
+    ]
+```
+
+```js
+function recursiveMap(commentLists, level, depthVal) {
+    commentLists.map((commentList) => {
+      var depthStyle = depthVal * 20;
+
+      if(commentList["childrenComments"] !== "" && commentList["childrenComments"] !== null 
+        && commentList["childrenComments"].length > 0
+      ){
+        renderVal.push(<Comment key={commentList["id"]} style={{ paddingLeft: depthStyle }}>
+          <CommentContent>
+              ... 중략
+          </CommentContent>
+         </Comment>
+         );
+          setCommentListRender([...commentListRender, 
+           renderVal]);
+        recursiveMap(commentList["childrenComments"], "child", depthVal+1)
+
+      }else{
+
+        renderVal.push(<Comment key={commentList["id"]} style={{ paddingLeft: depthStyle }}>
+          <CommentContent>
+            ... 중략
+         </CommentContent>
+         </Comment>);
+          setCommentListRender([...commentListRender, 
+           renderVal]);
+      }
+    });
+  }
+```
+
+코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 Reply로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.

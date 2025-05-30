@@ -414,7 +414,7 @@ reducer를 통해 state를 업데이트하는 로직들을 통합하여 관리 �
 참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
 
 
-### 1.1 글쓰기, 수정 특이사항
+### 1.2 첨부 파일 처리
 게시판 글쓰기, 수정의 경우 게시글에 첨부 파일을 첨부 하고 이미지 표시, 다운로드 할 수 있는 기능을 추가 했으며 파일 업로드 기능에 react의 useRef를 사용하여 react가 관리하는 DOM 노드에 접근하는 기능을 간단히 구현 해보았다.
 ![Image](h)
 
@@ -439,3 +439,160 @@ const fileInputRef1 = useRef();
 ```
 file input을 hidden으로 숨김 처리하고 fileInputRef1 선언 후 선언한 fileInputRef1 &lt;input ref={fileInputRef1}> 처럼 전달하여
 fileInputRef1.current에서 input DOM 노드 읽게하여 fileInputRef1.current.click() 부분으로 click 이벤트를 발생 시키는 방식으로 구혀하였다.
+
+- BoardWrite.js
+```js
+const [fileList, setFileList] = useState([]);
+
+...중략
+
+  const fileChange = e => {
+    const newFiles = Array.from(e.target.files);
+    setFileList(newFiles)
+  };
+...중략
+          const formData = new FormData();
+          formData.append("boardTitle", boardTitle);
+          formData.append("boardWriter", boardWriter);
+          formData.append("boardContents", boardContents);
+          if(fileList.length === 0) {
+          }else{
+          fileList.forEach((fileList) => {
+            formData.append('boardFile', fileList);
+           });
+          }
+...중략
+await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/boardSave`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                'access' : accessToken
+              }
+            }
+          )
+```
+react 렌더링한 요소를 서버로 전송할 경우 기존 html 양식 처럼 form을 submit 하는 형태가 아니기에 FormData 객체를 선언 후 전송할 필드와 데이터를 append 후 post 요청으로 첨부 파일을 포함하여 데이터를 전송 하도록 구현 하였다.
+
+![Image](h)
+
+- detail/[id].js
+```js
+useEffect(() => {
+  if(board["fileAttached"] === 1){
+      setFileList(board["boardFileDTO"]);
+      setImageFileList(fileList.filter(a => a.mimeType === "image"));
+      // filter 함수를 통해 기존 state의 복사본을 생성하여 할당
+    }
+}, [fileList]);
+... 중략
+          <List bulleted horizontal link>
+            <ListItem active>Attached | </ListItem>
+              {fileList.map((files) => (
+                  
+                  <a key={files.id} role="listitem" id={files.id} className="item"  href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/download/`+files.storedFileName} target="_blank">{files.originalFileName}{files.type}</a>                   
+                
+                ))}
+          </List>
+```
+
+BoardServiceImpl.class
+```java
+@Override
+  public Resource fetchFileAsResource(String fileName) throws FileNotFoundException {
+    Path UPLOAD_PATH;
+    try {
+        UPLOAD_PATH = Paths.get("C:\\Users\\lsmls\\IdeaProjects\\springBoot_prj\\attached");
+        Path filePath = UPLOAD_PATH.resolve(fileName).normalize();
+        Resource resource = new UrlResource(filePath.toUri());
+        // 첨부파일 처리를 위해 UrlResource 클래스를 선언 후 filePath를 할당 후 return하여 처리
+      if (resource.exists()) {
+        return resource;
+      } else {
+        throw new FileNotFoundException("File not found " + fileName);
+      }
+    } catch (MalformedURLException ex) {
+      throw new FileNotFoundException("File not found " + fileName);
+    }
+  }
+```
+
+상세보기에서 첨부된 파일의 타입을 체크하여 이미지일 경우 화면상에 보여 줄수 있도록 state를 만들어 react의 filter 함수를 통해 새로운 새로운 배열을 만들어 할당 할 수 있도록 하였다. 
+참고 -\
+<https://ko.react.dev/learn/updating-arrays-in-state>
+
+
+- update/[id].js
+```js
+if(fileUpdateList.length === 0) {
+  }else{
+    fileUpdateList.forEach((fileUpdate) => {
+    formData.append('boardFile', fileUpdate);
+    });
+  }
+  await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/updateBoard`,
+    formData,
+    {
+      headers: 
+      {
+        'Content-Type': 'multipart/form-data' 
+      }
+    })
+... 중략
+const fileDelete = async function (fileId, boardId) {
+    if(window.confirm('Delete attached file?')){
+      await Axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/fileDelete/${fileId}&${boardId}`, {
+        headers: {
+          "Content-Type": "application/json", 
+          access: localStorage.getItem("access") 
+        },
+        params: {
+          fileId: fileId,
+          boardId: boardId
+        },
+      }
+    ).then((response) => {
+
+      setFileList(response.data);
+      alert("Delete Success");
+      router.refresh();
+
+    }).catch(function (error) {
+      console.log("error", error);
+    });
+    };
+  };
+```
+![Image](h)
+
+BoardServiceImpl.class
+```java
+  @Transactional
+  public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
+    boardFileRepository.deleteById(fileId);
+    // 특정 id 첨부 파일을 삭제하고
+
+    List<BoardFileEntity> boardFileEntityList = boardFileRepository.findByBoardId(boardId);
+
+    ModelMapper mapper = new ModelMapper();
+    List<BoardFileDTO> fileDTOList = mapper.map(boardFileEntityList, new TypeToken<List<BoardFileDTO>>() {
+    }.getType());
+
+    if(boardFileEntityList.size() == 0)
+    {
+      boardRepository.updatefileAttached(boardId);
+      // 첨부된 파일이 없을 시 게시글의 첨부 상태 update
+    }
+
+    return fileDTOList;
+  }
+```
+
+게시판의 수정또한 신규로 첨부되는 파일은 FormData 객체에 append하여 처리 되도록 구현 하였고 게시글의 모든 첨부 파일이 삭제되면 게시글의 파일 첨부여부를 false로 업데이트 되도록 하였다.
+
+
+### 1.3 동적 라우팅을 통한 접근
+![Image](h)
+게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 동적 세그먼트를 통해 접속이 가능 하도록 하였다.
+참고 -\
+<https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>

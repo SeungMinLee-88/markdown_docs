@@ -1,21 +1,20 @@
 # - 프로젝트 개요
-예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프론트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 백엔드 부분에 대해 중점적으로 다루었다.
+예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프론트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 프론트 부분에 대해 중점적으로 다루었다.
 <br /><br />
 # - 개발기간
 - 25.04 ~ 25.05(약 1.5개월)\
 <br /><br />
 # - 개발환경
-- JAVA v1.8
-- Spring Boot, Spring Data Jpa v3.4.3
-- Spring Security v3.4.3
-- Jsonwebtoken v0.12.3
-- lombok 등 라이브러리 및 Mysql DB
+- node.js v18.20.5
+- react v19.0.0
+- Next.js v15.2.4
+- Semantic UI React, Axios, FullCalendar 등 라이브러리
 <br /><br />
 # - 주요기능
 - 사용자인증
-Spring Security 통한 사용자 인증 및 권한 제어, Jwt 인증 토큰 및 refresh 토큰 발급, 재발급 기능
+기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 값 전달 처리
 - 게시판 :\
-기본 게시판 CRUD 기능 Pageable 인터페이스를 통한 페이징 처리, Specification을 통한 검색 기능, 첨부 파일 처리
+기본 게시판 CRUD 기능 및 검색, Semantic UI를통한 페이징 처리, react reducer를 통한 검색 기능, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
 - 코멘트 :\
 코멘트 CRUD 기능, 코멘트 트리 UI 표현
 - 예약 :\

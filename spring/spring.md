@@ -657,12 +657,67 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ```
 
 ### 3.2 게시판 특이사항 - 첨부파일 처리
-게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다. 
+게시판의 기본 내용에 첨부파일을 첨부하고 처리하는 기능을 구현 하였다.
 
-- BoardSpecification.class
+- RestBoardController.class
 ```java
+@PostMapping("/boardSave")
+// 사용자 화면에서 multipart/form-data 형식의 form 데이터가 전송 될 것이므로 MultipartFile[] boardFile 형식의 데이터를 RequestParam 받아 주어야 한다.
+    public ResponseEntity<BoardPostResponse> boardSave(@RequestParam("boardTitle") String boardTitle, @RequestParam("boardWriter") String boardWriter, @RequestParam("boardContents") String boardContents, @RequestParam(name="boardFile", required = false) MultipartFile[] boardFile) throws IOException {
+        BoardDTO boardDTO = new BoardDTO();
+        boardDTO.setBoardTitle(boardTitle);
+        boardDTO.setBoardWriter(boardWriter);
+        boardDTO.setBoardContents(boardContents);
+        boardDTO.setFileList(boardFile);
+        boardService.boardSaveAtta(boardDTO);
+
+        return ResponseEntity.ok(BoardPostResponse
+                .builder()
+                .resultMessage("save success")
+                .resultCode("200")
+                .id(1L)
+                .build());
+    }
 ```
 
+```java
+@Override
+  public BoardDTO boardSaveAtta(BoardDTO boardDTO) throws IOException {
+// 첨부파일은 별개 엔티티로 관리 되므로 요청 시 첨부파일 존재 여부에 따라 분기하여 처리 한다.
+    if (boardDTO.getFileList() == null) {
+    ... 중략
+    } else {
+      // 첨부파일 존재 시 게시글 엔티티의 파일 첨부여부를 1로 변경
+      boardDTO.setFileAttached(1);
+      BoardEntity saveBoardEntity = BoardEntity.toSaveEntity(boardDTO);
+      BoardEntity boardEntitys = boardRepository.save(saveBoardEntity);
+      Long savedId = boardRepository.save(saveBoardEntity).getId();
+      BoardEntity board = boardRepository.findById(savedId).get();
+
+      if(boardDTO.getFileList().length > 0) {
+        for (MultipartFile boardFile : boardDTO.getFileList()) {
+          String originalFilename = boardFile.getOriginalFilename();
+          String storedFileName = System.currentTimeMillis() + "_" + originalFilename;
+          String savePath = "..." + storedFileName;
+          String mimeType = boardFile.getContentType().substring(0, boardFile.getContentType().indexOf("/"));
+          boardFile.transferTo(new File(savePath));
+          BoardFileEntity boardFileEntity = BoardFileEntity.toBoardFileEntity(board, originalFilename, storedFileName, mimeType);
+          // 첨부파일 리스트를 저장 처리 한다.
+          boardFileRepository.save(boardFileEntity);
+        }
+      }
+      ...생략
+  }
+```
+첨부파일 엔티티가 별개 존재 하므로 삭제 처리도 별개로 구현
+```java
+@GetMapping("/fileDelete/{fileId}&{boardId}")
+    public List<BoardFileDTO> fileDelete(@PathVariable Long fileId, @PathVariable Long boardId) {
+        List<BoardFileDTO> boardFileDTOList = boardService.fileDelete(fileId, boardId);
+
+        return boardFileDTOList;
+    }
+```
 
 ## 5. 결론 및 향후 계획
 JavaScript 라이브러리인 react와 react 기반 프레임워크인 nextjs를 통해 예전에 진행했던 예약 플젝트의 일부를 구현 해보았다. 이번 프로젝트는 react와 nextjs를 처음 접해보고 사용기에 Pages Router를 통해 구현 하였으며

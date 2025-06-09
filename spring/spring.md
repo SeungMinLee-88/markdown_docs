@@ -467,17 +467,43 @@ public class JWTFilter extends OncePerRequestFilter {
 게시판은 기본적은 CRUD 기능을 구현 하였으며 기본적인 제목, 내용, 첨부파일을 첨부하고 각 게시글에 코멘트를 남길 수 있도록 하였다.
 
 
-
 ### 3.1 게시판 특이사항 - Pageable, Specification
+게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다. 
 
-- BoardServiceImpl.class
+- BoardSpecification.class
+```java
+@AllArgsConstructor
+// Specification을 구현 한다. 레퍼런스 문서를 참고하여 구현한다
+// https://docs.spring.io/spring-data/jpa/reference/jpa/specifications.html
+public class BoardSpecification implements Specification<BoardEntity> {
+
+    private SearchCriteria criteria;
+
+    @Override
+    public Predicate toPredicate
+            (Root<BoardEntity> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
+
+        if(criteria.getSearchKey() != null){
+            if (root.get(criteria.getSearchKey()).getJavaType() == String.class) {
+                   return builder.like(
+                   root.<String>get(criteria.getSearchKey()), "%" + criteria.getSearchValue() + "%");
+               } else {
+                  return builder.equal(root.get(criteria.getSearchKey()), criteria.getSearchValue());
+            }
+        }
+        return null;
+    }
+}
+```
 ```java
 @Override
   public Page<BoardDTO> boardList(Pageable pageable, Map<String, String> params){
-    int page = pageable.getPageNumber() - 1;
-    //int pageLimit = 3;
+
+    // 컨트롤러에서 Pageable과 검색 Rarams를 받아 서비스 검색 파라미터들은 Specification를 BoardSpecification 객체를 만들고 
 
     Specification<BoardEntity> specification = new BoardSpecification(new SearchCriteria(params.get("searchKey"), params.get("searchValue")));
+    
+    // Pageable과 값들은 필요한 PageRequest으 매개변수로 담아 리포지토리로 넘겨주면 페이징 처리된 결과가 리턴된다.
     Page<BoardEntity> boardEntities = boardRepository.findAll(specification, PageRequest.of(page, pageable.getPageSize(), pageable.getSort()));
 
     Page<BoardDTO> boardDTOList = boardEntities.map(board -> new BoardDTO(board.getId(), board.getBoardWriter(), board.getBoardTitle(), board.getBoardHits(), board.getCreatedTime()));
@@ -486,11 +512,156 @@ public class JWTFilter extends OncePerRequestFilter {
 
   }
 ```
+```java
+// 리포지토리 인터페이스에서 JpaSpecificationExecutor를 상속받고 쿼리 메서드를 요청하면 검색 대상 필드와 검색어가 적용된 결과가 리턴 된다.
+public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSpecificationExecutor<BoardEntity> {
+  @Modifying
+  @Query(value = "update BoardEntity b set b.boardHits=b.boardHits+1 where b.id=:id")
+  void updateHits(@Param("id") Long id);
 
-- BoardSpecification
+  @Modifying
+  @Query(value = "update BoardEntity b set b.fileAttached=0 where b.id=:id")
+  void updatefileAttached(@Param("id") Long id);
+}
+```
 
 
+- Pageable 적용 결과
+```json
+{
+    "content": [
+      ...중략
+        {
+            "id": 2,
+            "boardWriter": "111",
+            "boardTitle": "aaa",
+            "boardContents": null,
+            "boardHits": 0,
+            "boardCreatedTime": "2025-06-04T12:05:46.316532",
+            "boardUpdatedTime": null,
+            "fileList": null,
+            "originalFileName": null,
+            "storedFileName": null,
+            "fileAttached": 0,
+            "boardFileDTO": null
+        }
+    ],
+    // 페이징 데이터도 함께 리턴 된다.
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 2,
+        "sort": {
+            "empty": true,
+            "unsorted": true,
+            "sorted": false
+        },
+        "offset": 0,
+        "paged": true,
+        "unpaged": false
+    },
+    "last": false,
+    "totalElements": 12,
+    "totalPages": 6,
+    "first": true,
+    "size": 2,
+    "number": 0,
+    "sort": {
+        "empty": true,
+        "unsorted": true,
+        "sorted": false
+    },
+    "numberOfElements": 2,
+    "empty": false
+}
+```
 
+- Specification 적용 결과
+```json
+{
+            "id": 2,
+            "boardWriter": "111",
+            "boardTitle": "aaa",
+            "boardContents": null,
+            "boardHits": 0,
+            "boardCreatedTime": "2025-06-04T12:05:46.316532",
+            "boardUpdatedTime": null,
+            "fileList": null,
+            "originalFileName": null,
+            "storedFileName": null,
+            "fileAttached": 0,
+            "boardFileDTO": null
+        },
+        {
+            "id": 7,
+            "boardWriter": "testid1",
+            "boardTitle": "aaa",
+            "boardContents": null,
+            "boardHits": 0,
+            "boardCreatedTime": "2025-06-09T16:43:19.596313",
+            "boardUpdatedTime": null,
+            "fileList": null,
+            "originalFileName": null,
+            "storedFileName": null,
+            "fileAttached": 0,
+            "boardFileDTO": null
+        },
+...생략
+```
+
+- Pageable, Specification 혼합이 가능하다.
+```json
+{
+    "content": [
+...중략
+        {
+            "id": 9,
+            "boardWriter": "testid1",
+            "boardTitle": "acaaa",
+            "boardContents": null,
+            "boardHits": 0,
+            "boardCreatedTime": "2025-06-09T16:43:29.665184",
+            "boardUpdatedTime": null,
+            "fileList": null,
+            "originalFileName": null,
+            "storedFileName": null,
+            "fileAttached": 0,
+            "boardFileDTO": null
+        }
+    ],
+    "pageable": {
+        "pageNumber": 1,
+        "pageSize": 2,
+        "sort": {
+            "empty": true,
+            "unsorted": true,
+            "sorted": false
+        },
+        "offset": 2,
+        "paged": true,
+        "unpaged": false
+    },
+    "last": true,
+    "totalElements": 4,
+    "totalPages": 2,
+    "first": false,
+    "size": 2,
+    "number": 1,
+    "sort": {
+        "empty": true,
+        "unsorted": true,
+        "sorted": false
+    },
+    "numberOfElements": 2,
+    "empty": false
+}
+```
+
+### 3.2 게시판 특이사항 - 첨부파일 처리
+게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다. 
+
+- BoardSpecification.class
+```java
+```
 
 
 ## 5. 결론 및 향후 계획

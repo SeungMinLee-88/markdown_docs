@@ -44,6 +44,135 @@ Spring Security 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및
 ![Image](https://github.com/user-attachments/assets/283df42e-6218-4ca5-a86a-8a8dfd5828d3)
 
 
+## 2. 프로젝트 기본 구조
+### 2.1 생성자 패턴
+프로젝트는 특정한 형태의 생성자가 필요한 경우 직접 생성자를 선언하거나 Lombok 어노테이션을 사용하여 빌터 패턴을 사용하여 구현 하였다.
+
+- BoardDTO.class
+```java
+// 페이징 처리를 위해 직접 선언
+public BoardDTO(Long id, String boardWriter, String boardTitle, int boardHits, LocalDateTime boardCreatedTime) {
+    this.id = id;
+    this.boardWriter = boardWriter;
+    this.boardTitle = boardTitle;
+    this.boardHits = boardHits;
+    this.boardCreatedTime = boardCreatedTime;
+  }
+// 상세보기 페이지를 위해 직접 선언
+  public static BoardDTO toBoardDTO(BoardEntity boardEntity) {
+    BoardDTO boardDTO = new BoardDTO();
+    boardDTO.setId(boardEntity.getId());
+    boardDTO.setBoardWriter(boardEntity.getBoardWriter());
+    boardDTO.setBoardTitle(boardEntity.getBoardTitle());
+    boardDTO.setBoardContents(boardEntity.getBoardContents());
+    boardDTO.setBoardHits(boardEntity.getBoardHits());
+    boardDTO.setBoardCreatedTime(boardEntity.getCreatedTime());
+    boardDTO.setBoardUpdatedTime(boardEntity.getUpdatedTime());
+    boardDTO.setFileAttached(boardEntity.getFileAttached());
+    return boardDTO;
+  }
+
+- BoardEntity.class
+```java
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "board")
+public class BoardEntity extends BaseEntity {
+        ... 중략
+  // 빌더패턴을 통한 구현
+    public static BoardEntity toSaveEntity(BoardDTO boardDTO) {
+    return BoardEntity.builder()
+            .id(boardDTO.getId())
+            .boardWriter(boardDTO.getBoardWriter())
+            .boardTitle(boardDTO.getBoardTitle())
+            .boardContents(boardDTO.getBoardContents())
+            .fileAttached(boardDTO.getFileAttached())
+            .boardHits(0)
+            .build();
+```
+
+### 2.2 ORM 기반 구현
+Entity 객체는 BaseEntity를 상속 받도록 하였고 Spring Data JPA 모듈을 사용하여 관계 어노테이션을 통해 엔티티간에 관계를 정의 하였다.
+- BoardEntity.class
+```java
+public class ReserveEntity extends BaseEntity {
+... 중략
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  private String reserveReason;
+  private String reserveDate;
+  private String reservePeriod;
+
+  private String reserveUserId;
+  private String userName;
+
+
+// 관계 어노테이션을 통한 엔티티 매핑
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private UserEntity userEntity;
+
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "hall_id")
+  private HallEntity hallEntity;
+
+
+  @OneToMany(mappedBy = "reserveEntity", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+  private final List<ReserveTimeEntity> reserveTimeEntity = new ArrayList<>();
+  ... 생략
+
+```
+
+### 2.3 JpaRepository 상속 구현
+각 리포지토리 인터페이스는 JpaRepository를 상속받아 기본 쿼리 메서드를 통해 테이블에 접근하며 인터페이스에 쿼리 메서드를 정의, @Query 어노테이션 사용하여 직접 쿼리 선언하는 방식 등을 통해 구현해 보았다.
+
+- UserServiceImpl.class
+```java
+// UserRepository 인터페이스 JpaRepository 상속 받아 기본 제공 메서드를 사용
+userRepository.findById(userDto.getId());
+
+```
+- UserRepository.class
+```java
+
+public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
+        
+// JPA에서 제공되는 쿼리 메서드를 통해 사용자 정보 조회
+  Boolean existsByLoginId(String loginId);
+
+  UserEntity findByLoginId(String loginId);
+
+  UserEntity findByLoginIdAndUserPassword(String loginId, String userPassword);
+
+// @Query 어노테이션을 통해 엔티티에 대한 쿼리를 직접 선언
+  @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.roleUserEntities")
+  Page<UserEntity> findAllWithRelated(Pageable pageable);
+
+  @Query("SELECT u FROM UserEntity u")
+  Page<UserEntity> findAllWithPageble(Specification specification, Pageable pageable);
+}
+```
+BoardRepository.class
+```java
+public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSpecificationExecutor<BoardEntity> {
+// @Modifying 엔티티를 직접 접근하여 수정하는 방식도 사용해 보았다.
+  @Modifying
+  @Query(value = "update BoardEntity b set b.boardHits=b.boardHits+1 where b.id=:id")
+  void updateHits(@Param("id") Long id);
+
+  @Modifying
+  @Query(value = "update BoardEntity b set b.fileAttached=0 where b.id=:id")
+  void updatefileAttached(@Param("id") Long id);
+}
+```
+이외 @Transactional 어노테이션을 통해 메서드 레벨 트랜잭션 관리 등을 구현 해보았으며 Spring Data JPA를 통해 JPA 기반으로 데이터 액세스 계층을 추상화하며 ORM 기반한 구조로 프로젝트를 구현하였다.
+(Spring Data JPA가 디폴트 구현체로 Hibernate를 제공하기에 구현체는 Hibernate를 사용 하였다.)
+
+
 ## 2. 사용자인증
 사용자 인증에는 Spring에서 제공하는 Security 라이브러리를 사용 하였다.
 
@@ -217,6 +346,9 @@ protected void successfulAuthentication (HttpServletRequest request, HttpServlet
 
 - JWTFilter.class
 ```java
+
+// Filter 클래스 implements 방식이 아닌 OncePerRequestFilter 상속 받는 방식으로 구현
+
 public class JWTFilter extends OncePerRequestFilter {
 
   private final JWTUtil jwtUtil;
@@ -330,6 +462,32 @@ public class JWTFilter extends OncePerRequestFilter {
 - 토큰 만료 시
 - 리프레시 토큰
 - 토큰 재발급
+
+## 3. 게시판
+게시판은 기본적은 CRUD 기능을 구현 하였으며 기본적인 제목, 내용, 첨부파일을 첨부하고 각 게시글에 코멘트를 남길 수 있도록 하였다.
+
+
+
+### 3.1 게시판 특이사항 - Pageable, Specification
+
+- BoardServiceImpl.class
+```java
+@Override
+  public Page<BoardDTO> boardList(Pageable pageable, Map<String, String> params){
+    int page = pageable.getPageNumber() - 1;
+    //int pageLimit = 3;
+
+    Specification<BoardEntity> specification = new BoardSpecification(new SearchCriteria(params.get("searchKey"), params.get("searchValue")));
+    Page<BoardEntity> boardEntities = boardRepository.findAll(specification, PageRequest.of(page, pageable.getPageSize(), pageable.getSort()));
+
+    Page<BoardDTO> boardDTOList = boardEntities.map(board -> new BoardDTO(board.getId(), board.getBoardWriter(), board.getBoardTitle(), board.getBoardHits(), board.getCreatedTime()));
+
+    return boardDTOList;
+
+  }
+```
+
+- BoardSpecification
 
 
 

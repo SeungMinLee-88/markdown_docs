@@ -917,10 +917,45 @@ ReserveTimeEntity extends BaseEntity {
 public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
 
 ... 중략
-  //
+  // 예약과 예약시간의 중간 테이블을 두고 쿼리 메소드를 통해 예약 데이터를 가져올 때 예약 시간도 가져 올 수 있도록 하였다.
     List<ReserveEntity> findByReserveDateContainingAndReserveUserIdContaining(String reserveDate, String reserveUserId);
 }
 
+```
+```json
+{
+        // 트리 구조의 데이터를 리턴 받아 사용자 화면에서 예약 수정 등을 구현 할 수 있도록 하였다.
+        "id": 6,
+        "reserveReason": "test",
+        "reserveDate": "20250611",
+        "reservePeriod": "2",
+        "userName": "testusername1",
+        "reserveUserId": "testid1",
+        "hallId": 1,
+        "reserveTimeSave": null,
+        "reserveTime": [
+            {
+                "id": 1,
+                "reserveId": "testid1",
+                "timeId": null,
+                "reserveDate": "20250611",
+                "time": {
+                    "id": 4,
+                    "time": "13"
+                }
+            },
+            {
+                "id": 2,
+                "reserveId": "testid1",
+                "timeId": null,
+                "reserveDate": "20250611",
+                "time": {
+                    "id": 5,
+                    "time": "14"
+                }
+            }
+        ],
+    }
 ```
 
 

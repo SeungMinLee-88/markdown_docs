@@ -464,10 +464,9 @@ public class JWTFilter extends OncePerRequestFilter {
 - 토큰 재발급
 
 ## 3. 게시판
-게시판은 기본적은 CRUD 기능을 구현 하였으며 기본적인 제목, 내용, 첨부파일을 첨부하고 각 게시글에 코멘트를 남길 수 있도록 하였다.
+게시판은 기본적인 CRUD 기능을 구현 하였으며 게시판 구현 시 특이사항에 대해서만 설명 하겠다.
 
-
-### 3.1 게시판 특이사항 - Pageable, Specification
+### 3.1 게시판 - Pageable, Specification
 게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다. 
 
 - BoardSpecification.class
@@ -657,8 +656,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ```
 
 ### 3.2 게시판 특이사항 - 첨부파일 처리
-게시판의 기본 내용에 첨부파일을 첨부하고 처리하는 기능을 구현 하였다.
-
+게시판에는 첨부파일을 첨부하고 처리하는 기능을 구현 하였다.
 - RestBoardController.class
 ```java
 @PostMapping("/boardSave")
@@ -680,14 +678,15 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
     }
 ```
 
+- BoardServiceImpl.class
 ```java
 @Override
   public BoardDTO boardSaveAtta(BoardDTO boardDTO) throws IOException {
-// 첨부파일은 별개 엔티티로 관리 되므로 요청 시 첨부파일 존재 여부에 따라 분기하여 처리 한다.
+// 게시글 저장 시 첨부파일 존재 여부에 따라 분기하여 처리 한다.
     if (boardDTO.getFileList() == null) {
     ... 중략
     } else {
-      // 첨부파일 존재 시 게시글 엔티티의 파일 첨부여부를 1로 변경
+      // 첨부파일 존재 시 게시판 테이블의 파일 첨부여부를 true로 insert 한다.
       boardDTO.setFileAttached(1);
       BoardEntity saveBoardEntity = BoardEntity.toSaveEntity(boardDTO);
       BoardEntity boardEntitys = boardRepository.save(saveBoardEntity);
@@ -709,7 +708,8 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
       ...생략
   }
 ```
-첨부파일 엔티티가 별개 존재 하므로 삭제 처리도 별개로 구현
+게시글의 첨부파일 삭제 시 해당 게시글의 첨부파일 존재 여부를 확인하고 모든 첨부 파일 삭제 시 파일 첨부여부를 false로 업데이트 하여 사용자 화면의 첨부리스트 노출 여부를 결정 할 수 있도록 하였다. 
+- RestBoardController.class
 ```java
 @GetMapping("/fileDelete/{fileId}&{boardId}")
     public List<BoardFileDTO> fileDelete(@PathVariable Long fileId, @PathVariable Long boardId) {
@@ -718,6 +718,37 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
         return boardFileDTOList;
     }
 ```
+
+- BoardServiceImpl.class
+```java
+@Override
+  @Transactional
+  public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
+    boardFileRepository.deleteById(fileId);
+
+    // 게시판 아이디로 첨부 파일 테이블 조회
+    List<BoardFileEntity> boardFileEntityList = boardFileRepository.findByBoardId(boardId);
+
+    ModelMapper mapper = new ModelMapper();
+    List<BoardFileDTO> fileDTOList = mapper.map(boardFileEntityList, new TypeToken<List<BoardFileDTO>>() {
+    }.getType());
+
+    if(boardFileEntityList.size() == 0)
+    {
+      // 해당 게시글의 첨부파일이 없다면 첨부 파일 존재 여부 false로 업데이트
+      boardRepository.updatefileAttached(boardId);
+    }
+
+    return fileDTOList;
+  }
+```
+
+## 4. 코멘트
+코멘트도 기본적인 CRUD 기능을 구현 하였으며 코멘트의 
+
+
+### 3.1 게시판 특이사항 - Pageable, Specification
+
 
 ## 5. 결론 및 향후 계획
 JavaScript 라이브러리인 react와 react 기반 프레임워크인 nextjs를 통해 예전에 진행했던 예약 플젝트의 일부를 구현 해보았다. 이번 프로젝트는 react와 nextjs를 처음 접해보고 사용기에 Pages Router를 통해 구현 하였으며

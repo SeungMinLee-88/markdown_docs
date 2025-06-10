@@ -32,7 +32,9 @@
 컴포넌트간 데이터 전달을 위해 props와 vuex 라이브러리를 통한 중앙 집중식 저장소 방식 2가지를 사용 해보았다
 
 #### 1.1 props 사용 방식
+자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 클릭 이벤트 등에 대한 처리는 **emit** 이벤트를 호출 하여 구현 하였다
 
+##### 1.1.1 페이징
 - App.vue
 ```js
 // currentPage.value를 자식 컴포넌트로 전달하여 UserList 컴포넌트에서 v-pagination에 현재 페이지 값을 전달한다.
@@ -84,7 +86,65 @@ function handlePageClick(pageVal) {
 - 페이징 동작화면
 ![1_page](https://github.com/user-attachments/assets/90e7f1c7-5f58-40ca-82e4-a6911f056d15)
 
-자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 클릭 이벤트 등에 대한 처리는 **emit** 이벤트를 호출 하여 구현 하였다.
+
+##### 1.1.2 검색
+
+- SearchBar.vue
+```js
+...
+// 검색 대상 필드 선택이나 검색어 입력, 검색 버튼 클릭 시 이벤트를 발생 시키도록 하고
+    <v-card-text>
+      <v-text-field
+        :loading="loading"
+        append-inner-icon="mdi-magnify"
+        density="compact"
+        label="Search templates"
+        variant="solo"
+        hide-details
+        single-line
+        @click:append-inner="userSearch"
+        @update:modelValue="inputSearch"
+        @userSearch="userSearch"
+      ></v-text-field>
+```
+```js
+// 발생된 이벤트에서 emit 부모 컴포넌트로 인수 전달, 이벤트 유발
+const emit = defineEmits(['pageClick', 'selectFiled', 'inputSearch', 'mainPageClick'])
+
+const selectFiled = (selectSearchFiled) => {
+  emit('selectFiled', selectSearchFiled);
+}
+
+const inputSearch = (inputSearch) => {
+  emit('inputSearch', inputSearch);
+}
+
+const userSearch = () => {
+  emit('userSearch');
+  emit('mainPageClick', 1);
+}
+```
+- App.vue
+```js
+// emit으로 검색 필드와 검색 텍스트를 전달 받고 사용자 검색 이벤트가 발생된다.
+<MainComp
+  :userList=userList
+  :currentPage=currentPage
+  :pageLength=pageLength
+  @pageClick='pageClick'
+  @selectFiled='selectFiled'
+  @inputSearch='inputSearch'
+  :searchFiled='searchFiled'
+  :searchTxt='searchTxt'
+  @userSearch='userSearch'
+  @showModalPop='showModalPop'
+/>
+...
+const userSearch = () => {
+  getData();
+}
+```
+![Image](https://github.com/user-attachments/assets/9b10a027-20aa-40bf-9fba-7a51560418cc)
 
 #### 1.2 Vuex 라이브러리 사용 방식
 여러 컴포넌트간에 저장소 공유를 위해 Vuejs 애플리케이션에 대한 상태 관리 패턴 라이브러리인 Vuex 사용해 보았으며 state와 mutations, 비동기 작업 처리를 위한 actions를 store.js에 선언 하여 사용 하였다.  

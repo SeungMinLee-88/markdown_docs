@@ -924,7 +924,6 @@ public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
 ```
 ```json
 {
-        // 트리 구조의 데이터를 리턴 받아 사용자 화면에서 예약 수정 등을 구현 할 수 있도록 하였다.
         "id": 6,
         "reserveReason": "test",
         "reserveDate": "20250611",
@@ -941,7 +940,9 @@ public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
                 "reserveDate": "20250611",
                 "time": {
                     "id": 4,
-                    "time": "13"
+                    "time": "13",
+                    "reserved": 0,
+                    "reserveUserId": null
                 }
             },
             {
@@ -951,10 +952,14 @@ public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
                 "reserveDate": "20250611",
                 "time": {
                     "id": 5,
-                    "time": "14"
+                    "time": "14",
+                    "reserved": 0,
+                    "reserveUserId": null
                 }
             }
         ],
+        "reserveCreatedTime": "2025-06-10T12:01:18.003458",
+        "reserveUpdatedTime": null
     }
 ```
 

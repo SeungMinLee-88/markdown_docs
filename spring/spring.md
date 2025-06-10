@@ -34,7 +34,7 @@ Spring Security 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및
 ![Image](https://github.com/user-attachments/assets/3ff89efb-cb24-4edf-8514-f769328fc6f7)
 
 ### 1.2 게시판
-게시판은 게시글을 작성하는 사용자와 N:1, 게시글에 첨부되는 첨부파일과 1:N, 게시글의 코멘트와 1:N 관계이다. 코멘트의 경우 Reply 기능으로 자기 참조 데이터가 생성되므로 자기자신을 1:N으로 참조 하게 된다.
+게시판은 게시글을 작성하는 사용자와 N:1, 게시글에 첨부되는 첨부파일과 1:N, 게시글의 코멘트와 1:N 관계이다. 코멘트의 경우 답글 기능으로 자기 참조 데이터가 생성되므로 자기자신을 1:N으로 참조 하게 된다.
 
 ![Image](https://github.com/user-attachments/assets/f08b4e4f-d24a-4b90-baa9-914944126c7c)
 
@@ -744,10 +744,185 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ```
 
 ## 4. 코멘트
-코멘트도 기본적인 CRUD 기능을 구현 하였으며 코멘트의 
+코멘트도 기본적인 CRUD 기능을 구현 하였으며 게시판과 같이 Pageable 인터페이스를 통해 페이징 처리를 하였으며 코멘트의 경우 답글 기능으로 자기 참조 관계 설정 및 리스트 트리 구현 하였다. 
 
 
-### 3.1 게시판 특이사항 - Pageable, Specification
+### 4.1 코멘트 - 리스트 트리
+erd이미지
+
+코멘트는 부모 아이디가 없는 루트 코멘트가 있으며 루트 코멘트에 답글 달기 기능으로 차일드 코멘트가 발생되며 차일드 코멘트 역시 답글이 달리게 되어 부모 코멘트가 되며 해당 답글은 같은 루트 코멘트를 가진 차일드 코멘트가 된다.
+
+테이블 이미지
+
+CommentEntity.class
+```java
+  // 코멘트의 엔티티 관계 매팅 루트 코멘트와 부모 코멘트는 여러 자식 코멘트를 가지게 된다.
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "parent_comment_id")
+  //@JsonIgnore 어노테이션으로 직렬화에서 제외
+  @JsonIgnore
+  private CommentEntity parentCommentEntity;
+
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "root_comment_id")
+  @JsonIgnore
+  private CommentEntity rootCommentEntity;
+
+  // @Transient 어노테이션을 통해 영속 대상에서 제외
+  @Transient
+  public final List<CommentEntity> childrenComments = new ArrayList<CommentEntity>();
+
+```
+
+RestCommentController.class
+```java
+
+    // 부모 코멘트가 없는 코멘트인 루트 코멘트 리스트를 가져오고
+    BoardEntity boardEntity = boardRepository.findById(boardId).get();
+    Page<CommentEntity> rootCommentEntity = commentRepository.findByBoardEntityAndParentCommentEntityIsNull(boardEntity, PageRequest.of(page, pageable.getPageSize()));
+
+
+    // 가져온 루트 코멘트 리스트들의 자식 코멘트를 가져온다
+    List<Long> rootCommentIds = rootCommentEntity.stream().map(CommentEntity::getId).collect(Collectors.toList());
+    List<CommentEntity> subComments = commentRepository.findAllSubCommentEntitysInRoot(rootCommentIds);
+
+    // 자식 코멘트 리스트들을 반복문을 돌며 부모와 자식 코멘트의 자식 코멘트를 가져온다.
+    subComments.forEach(subComment -> {
+        subComment.getParentCommentEntity().getChildrenComments().add(subComment); // no
+    });
+
+```
+코멘트 엔티티들의 리스트들을 반복문을 통해 처리 하면 아래와 같은 트리 구조의 JSON 데이터를 리턴 받을 수 있으며 리턴 받은 코멘트 리스트를 사용자 화면에서 재귀적으로 처리하여 표현 할 수 있도록 구현 하였다.
+
+```json
+"createdTime": "2025-06-10T09:26:10.76783",
+            "updatedTime": null,
+            "id": 8,
+            "commentWriter": "testid1",
+            "commentContents": "11",
+            "childrenComments": [
+                {
+                    "createdTime": "2025-06-10T09:26:33.413461",
+                    "updatedTime": null,
+                    "id": 11,
+                    "commentWriter": "testid2",
+                    "commentContents": "4444",
+                    "childrenComments": [
+                        {
+                            "createdTime": "2025-06-10T09:26:41.891861",
+                            "updatedTime": null,
+                            "id": 12,
+                            "commentWriter": "testid1",
+                            "commentContents": "5555",
+                            "childrenComments": []
+                        }
+                    ]
+                },
+                {
+                    "createdTime": "2025-06-10T09:26:53.023516",
+                    "updatedTime": null,
+                    "id": 14,
+                    "commentWriter": "testid1",
+                    "commentContents": "7777",
+                    "childrenComments": []
+                }
+            ]
+        },
+        {
+            "createdTime": "2025-06-10T09:26:25.226668",
+            "updatedTime": null,
+            "id": 9,
+            "commentWriter": "testid2",
+            "commentContents": "222",
+            "childrenComments": [
+                {
+                    "createdTime": "2025-06-10T09:26:46.694357",
+                    "updatedTime": null,
+                    "id": 13,
+                    "commentWriter": "testid1",
+                    "commentContents": "6666666",
+                    "childrenComments": []
+                }
+            ]
+        },
+        {
+            "createdTime": "2025-06-10T09:26:28.957493",
+            "updatedTime": null,
+            "id": 10,
+            "commentWriter": "testid2",
+            "commentContents": "333",
+            "childrenComments": []
+        }
+```
+화면 이미지
+
+## 5. 예약
+예약 역시 기본적인 CRUD 기능을 구현 하였으며 예약의 경우 1개 예약에 여러 예약 시간이 존재 할 수 있으며 예약 시간 역시 여러 다수의 예약에 할당 될 수 있으므로 N:N 관계가 되며 N:N 관계가 가진 이슈로 인에 중간 테이블인 reserve_time 테이블로 관리 되도록 구현 하였다.
+
+
+### 5.1 예약 - 예약과 예약 시간
+erd
+
+- ReserveTimeEntity.class
+```java
+ReserveTimeEntity extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // 중간 엔티티인 예약시간 예약과 시간을 N:1로 가지도록 매칭
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reserve_id")
+    private ReserveEntity reserveEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "time_id")
+    private TimeEntity timeEntity;
+    ... 생략
+```
+- ReserveServiceImpl
+```java
+@Override
+    public ReserveDTO reserveSave(ReserveDTO reserveDTO){
+        Optional<UserEntity> optionalUserEntity = Optional.ofNullable(userRepository.findByLoginId(reserveDTO.getReserveUserId()));
+        Optional<HallEntity> optionalHallEntity = hallRepository.findById(reserveDTO.getHallId());
+        if (optionalUserEntity.isPresent() && optionalHallEntity.isPresent()) {
+            UserEntity userEntity = optionalUserEntity.get();
+            HallEntity hallEntity = optionalHallEntity.get();
+            ReserveEntity reserveEntity = ReserveEntity.toSaveEntity(reserveDTO, userEntity, hallEntity);
+            ReserveEntity reserveEntitys = reserveRepository.save(reserveEntity);
+
+            // 예약을 저장 할때는 선택된 시간 리스트들을 반복문으로 돌며 중간 테이블인 예약시간 테이블에 저장 하게 된다.
+            for(int i = 0; i < reserveDTO.getReserveTimeSave().size(); i++) {
+                System.out.println("timeDtoList : " + reserveDTO.getReserveTimeSave().get(i));
+                TimeEntity timeEntity = timeRepository.findById(reserveDTO.getReserveTimeSave() .get(i)).get();
+                ReserveTimeEntity reserveTimeEntity = ReserveTimeEntity.toSaveEntity(reserveEntity, timeEntity,reserveDTO);
+                reserveTimeRepository.save(reserveTimeEntity);
+            }
+            ModelMapper mapper = new ModelMapper();
+
+            ReserveDTO reserveDTO1  = mapper.map(reserveEntitys, new TypeToken<ReserveDTO>(){}.getType());
+
+            return reserveDTO1;
+
+        } else {
+            return null;
+        }
+    }
+```
+
+- ReserveRepository
+```java
+public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
+
+... 중략
+  //
+    List<ReserveEntity> findByReserveDateContainingAndReserveUserIdContaining(String reserveDate, String reserveUserId);
+}
+
+```
+
 
 
 ## 5. 결론 및 향후 계획

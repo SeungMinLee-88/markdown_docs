@@ -1,20 +1,17 @@
 # - 프로젝트 개요
 예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프론트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 프론트 부분에 대해 중점적으로 다루었다.
-<br /><br />
 # - 개발기간
-- 25.04 ~ 25.05(약 1.5개월)\
-<br /><br />
+- 25.04 ~ 25.05(약 1.5개월)
 # - 개발환경
 - node.js v18.20.5
 - react v19.0.0
 - Next.js v15.2.4
 - Semantic UI React, Axios, FullCalendar 등 라이브러리
-<br /><br />
 # - 주요기능
-- 사용자인증
-기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 값 전달 처리
+- 사용자인증 :\
+기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 컴포넌트 트리에 값 공유
 - 게시판 :\
-기본 게시판 CRUD 기능 및 검색, Semantic UI를통한 페이징 처리, react reducer를 통한 검색 기능, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
+기본 게시판 CRUD 기능 및 검색, Semantic UI를 통한 페이징 처리, react reducer를 통한 검색 관련 state 로직 통합, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
 - 코멘트 :\
 코멘트 CRUD 기능, 코멘트 트리 UI 표현
 - 예약 :\
@@ -22,7 +19,7 @@
 FullCalendar 라이브러리를 통한 달력 UI 표현, react createRef를 이용한 클래스 컴포넌트 DOM 오브젝트 처리 등
 <br /><br />
 # - 특이사항
-- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router부터 사용하는 것이 추천되어 Pages Router를 통해 구현 하였으며 향후 App Router 구조로 마이그레이션 진행 예정
+- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router를 통한 구현이 추천되어 Pages Router를 통해 구현 하였으며 향후 App Router 구조로 마이그레이션 진행 예정\
 참고 -\
 <https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>\ <https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>\
 <https://www.reddit.com/r/nextjs/comments/1gdxcg5/why_do_you_still_prefer_page_router_over_app/>
@@ -42,11 +39,12 @@ FullCalendar 라이브러리를 통한 달력 UI 표현, react createRef를 이�
 ### 1.1 인증처리
 사용자 인증 및 접근 제어는 Spring Security와 JWT 라이브러리를 통해서 구현 하였으며 로그인 성공시 localStorage, sessionStorage에 인증과 권한 확인에 필요한 값을 저장한다.
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449907532-534f09cd-c7af-40a4-8e5f-7e8a208484fd.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T030957Z&X-Amz-Expires=300&X-Amz-Signature=db16a32cb3c031339bd46870db1add9f884fc92cde5328c857e0142a4475178a&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/1011ad0f-a204-42e5-a304-18fc4ce52063)
 
 
 login.js
 ```js
+// Axios를 통해 사용자 인증을 요청하는 api url 호출 
 await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/login`, 
           {
             loginId: loginId,
@@ -91,7 +89,7 @@ export default function MyApp({ Component, pageProps }) {
 ```
 
 ### 1.3 react Context를 통한 자식 컴포넌트로 값 전달
-useEffect를 통한 state 변경 감지 부분 추가는 공유 레이아웃 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 전달을 구현해 보기 위해서이다.  
+useEffect를 통한 state 변경 감지 부분 추가는 공유 레이아웃 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 공유 방식을 구현해 보기 위해서이다.  
 (<span style="color:red">**Next.js 13 이후 App Router의 Server Component는 Context Provider를 미지원 하므로 향후 마이그레이션 시에는 Client Component를 이용해 구성해 볼 예정**.</span> )  
 참고 -\
 <https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers>  
@@ -129,10 +127,12 @@ export const UserNameContext = createContext("userNameContext");
 ```
 Context를 선언하고 _app.js에서 Context를 provider로 하위 컴포넌트로 전달하여 다수 컴포넌트나 여러 단계를 거치는 하위 컴포넌트에서 사용자 정보를 사용할 수 있도록 하였다.
 
-- Context 사용 예시)
+- Context 구조
 ```mermaid
 flowchart TB
   subgraph _app.js
+  UserContext-->UserIdContext
+  UserContext-->UserNameContext
     subgraph Reserve.js
       subgraph ReserveForm.js
         UserIdContext
@@ -142,6 +142,7 @@ flowchart TB
   end
   style _app.js text-align:left
 ```
+- ReserveForm
 ```js
 import { UserIdContext } from './UserContext.js';
 import { UserNameContext } from './UserContext.js';
@@ -184,12 +185,8 @@ async function getData() {
       return;
     }
 ```
-- 인증토큰 만료 시 토큰 재발급 여부 확인
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449931523-15a336c6-8be6-4b1e-a86a-dbd9ed1d8345.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T031130Z&X-Amz-Expires=300&X-Amz-Signature=eef9a06524d856f449d0cab21bbbba78f69d845242ff832d9b0f2ad650c16b97&X-Amz-SignedHeaders=host)
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449931978-6388e7a0-8865-4d54-9a9d-9402c62a5267.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T031209Z&X-Amz-Expires=300&X-Amz-Signature=008d6a85f0b5f467ebb164a44e0b7ed4a673f0f98ff75bbe572d63c6c2c34ccc&X-Amz-SignedHeaders=host)
-
-사용자 인증 성공 시 인증 jwt 토큰과 토큰 만료 시 재발급을 위한 refresh 토큰이 발급되며 사용자 화면에서 유효한 토큰이 요구되는 페이지를 만료된 토큰을 가지고 접근 시 서버를 통해서  401에러가 리턴되며 해당 코드 리턴 시 토큰 재발급 여부를 확인 후 재발급 되도록 구현 하였다.
+사용자 인증 성공 시 인증 jwt 토큰과 토큰 만료 시 재발급을 위한 리프레시 토큰이 발급되며 사용자 화면에서 유효한 토큰이 요구되는 페이지를 만료된 토큰을 가지고 접근 시 서버를 통해서  401에러가 리턴되며 해당 코드 리턴 시 토큰 재발급 여부를 확인 후 재발급 되도록 구현 하였다.
 
 - 사용자 페이지의 인증 만료 여부 및 재발급 여부 확인 부분
 ```js
@@ -233,7 +230,9 @@ async function getData() {
       }
     });
 ```
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449933343-6b5f537d-0db8-41bb-ac05-7b32419e09f8.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T031439Z&X-Amz-Expires=300&X-Amz-Signature=1be41eb03f6279069d2300d9e59560a50d797acd8d37eb79ca523236458507a9&X-Amz-SignedHeaders=host)
+- 인증토큰 만료 시 토큰 재발급 여부 확인
+
+![Image](https://github.com/user-attachments/assets/a088e33d-c9c0-4136-b814-fea65de9994b)
 
 
 - _app.js의 토큰 재발급 부분
@@ -241,6 +240,7 @@ async function getData() {
 async function reissueAccessToken()
   {
     let result = "";
+    // 리프레시 토큰으로 인증 토큰 재발급 요청하는 api url을 호출한다.
     await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/reIssueToken` ,
       {},
       {
@@ -249,6 +249,7 @@ async function reissueAccessToken()
       )
       .then(function (response) {
         if(response.status === 200){
+          // 리프레시 토큰이 유효하다면 헤더 데이터로 새로운 인증 토큰과 쿠키 데이터로  리프레시 토큰이 발급된다.
           localStorage.removeItem("access");
           localStorage.setItem("access", response.headers.access);
         }
@@ -260,9 +261,13 @@ async function reissueAccessToken()
       return result;
   }
 ```
+![Image](https://github.com/user-attachments/assets/1f1d07ca-827b-4430-ba38-90de112fea32)
+
+![Image](https://github.com/user-attachments/assets/7fa061bb-ab1c-48df-8024-37b19261a1f1)
+
 
 ### 1.5 사용자 권한 제어
-Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해당 기능 확인을 위한 사용자 권한을 확인 후 접근을 제어하는 기능을 구현 하였으며 해당 페이지에서는 권한 제어 기능만 구현하고 간략한 사용자 관리 기능은 vue.js를 통해 구현 하였다.
+Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해당 기능 확인을 위한 사용자 권한을 확인 후 접근을 제어하는 기능을 구현 하였으며 해당 페이지에서는 권한 제어 기능만 구현하고 간략한 사용자 관리 기능은 Vuejs를 통해 구현 하였다.
 
 - 서버의 SecurityConfig 클래스
 ```java
@@ -287,14 +292,16 @@ Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해�
 
 - COMMON, TEMP 권한이 있는 사용자가 권한이 없는 페이지 접근 시
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449951385-903552f0-6eaf-40e9-ade5-be1e746e4cfe.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040215Z&X-Amz-Expires=300&X-Amz-Signature=8775a98ed3694f42a03b418b9d59ae991f234b8892723e97e7fc694017d29621&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/2fad2355-eada-4d6f-a96a-a9d2b24403bb)
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449951105-c0461fdb-79ec-45af-8431-babe28e55c5b.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040104Z&X-Amz-Expires=300&X-Amz-Signature=296597c0a62198693ecd458600146b573c885f6f60aa67e8d309037539f8c73c&X-Amz-SignedHeaders=host)\
+![Image](https://github.com/user-attachments/assets/650dc53c-b3e7-45d2-8752-a562db09232a)
 
+![Image](https://github.com/user-attachments/assets/61cb545e-e20d-4c3a-bb9a-a66d0b0820be)
 
 - ManagerUser.js
 ```js
 async function chkAuthor(){
+      // 서버에 ADMIN, MANAGER 권한이 필요한 api url을 호출
       await Axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/manageUser` ,
       {
         headers: {
@@ -308,20 +315,22 @@ async function chkAuthor(){
       .then(function (response) {
       })
       .catch(function (error) {
+        // COMMON, TEMP 권한은 접근이 불가 하므로 서버에서 403 에러를 리턴 하게 되며 인덱스 페이지로 리다이렉트 처리한다.
         if(error.response.status === 403){
                 alert("You are not authorized");
                 router.push(`/`); 
         }
       });
     }
+    // ManagerUser 컴포터넌트 접근 시 마운트가 완료되면 권한을 체크하는 chkAuthor를 호출 한다.
     useEffect(() => {
         chkAuthor()
         // 페이지 렌더링 시 권한 확인
     }, []);
 ```
 - ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시
-
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449951567-5d5424ae-8a51-4f05-ab1f-34934f6db538.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040259Z&X-Amz-Expires=300&X-Amz-Signature=77acb0a74c224c2204e595838ab490d40e88c3c14aef4f61c9fcaaccd57c179a&X-Amz-SignedHeaders=host)
+정상적으로 페이지에 접근 할 수 있다.
+![Image](https://github.com/user-attachments/assets/0533548a-98b7-40fc-8fb3-5704ff3a9307)
 
 
 ## 2. 게시판

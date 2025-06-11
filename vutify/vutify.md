@@ -1,23 +1,19 @@
 # - 프로젝트 개요
 이전 React 프로젝트에 사용자 관리 메뉴를 통해 Spring Security의 사용자 권한 제어를 확인 하는 페이지를 구현 하였고 실제 사용자를 관리하는 기능은 Vuejs를 통해 간단하게 구현해 보았다.\
-**Vue와 React를 동일 프로젝트에서 구성하는 것은 UI 프레임워크의 목적에 맞지 않으므로 Vuejs를 사용하여 간단한 프로젝트를 별도로 진행 하였다.**\
+**Vue와 React를 동일 프로젝트에서 구성하는 것은 UI 프레임워크의 목적에 맞지 않으므로 Vuejs를 사용하여 간단한 프로젝트를 별도로 진행 하였다.**
 
-<br /><br />
 # - 개발기간
-- 2025.05 ~ 2025.05(약 0.5개월)\
-<br /><br />
+- 2025.05 ~ 2025.05(약 0.5개월)
 # - 개발환경
 - node.js v18.20.5
 - vue v3.5.13, vuetify v3.8.1
 - vuex v4.1.0
-<br /><br />
 # - 주요기능
 - 사용자의 리스트를 보여주는 페이지와 페이징 및 검색 기능 
 - 사용자의 정보를 변경 및 삭제 하는 기능을 간단히 구현
 - Vuejs를 위한 디자인 UI 프레임워크 vuetify를 사용하여 페이지 디자인을 구현 하였으며 백엔드 부분의 데이터 처리를 위해 Axios 라이브러리를 사용
 
-<br /><br />
--  컴포넌트 구조
+# -  컴포넌트 구조
 ```mermaid
 flowchart TB
   subgraph App.vue
@@ -32,13 +28,13 @@ flowchart TB
 
 # - 상세기능
 ### 1. 데이터 처리
-컴포넌트간 데이터 전달을 위해 props와 vuex 라이브러리를 통한 중앙 집중식 저장소 방식 2가지를 사용 해보았다
+컴포넌트간 데이터 전달을 위해 props와 emit메서드를 통한 데이터 전달, vuex 라이브러리를 통한 중앙 집중식 저장소 방식 2가지를 사용 해보았다
 
 #### 1.1 props 사용 방식
 props 사용 방식을 통해 하위 컴포너트로 데이터를 전달하고 자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 하위 컴포넌트의 클릭 이벤트 등에 대한 처리는 **emit** 메서드를 통해 이벤트를 호출 하는 방식으로 구현 하였으며 사용자 리스트의 페이징과 검색 기능에 props을 통한 데이터 전달 방식을 사용 하였다.
 
 ##### 1.1.1 페이징
-페이징은 UserList 컴포넌트에 구현 하였으며 부모 컴포넌트와 페이징에 관련된 prop를 전달받고 이벤트를 발생시킨다.
+페이징은 UserList 컴포넌트에 구현 하였으며 부모 컴포넌트와 페이징에 관련된 prop를 전달받고 자식 컴포넌트에서 부모 컴포넌트의 메서드를 실행하는 이벤트를 발생 시킨다.
 - App.vue
 ```js
 
@@ -97,7 +93,7 @@ const props = defineProps(['userList', 'currentPage', 'pageLength', 'showModal']
 const props = defineProps(['userList', 'currentPage', 'pageLength', 'showModal'])
 const emit = defineEmits(['mainPageClick', 'showModalPop'])
 
-// emit을 통해 부모 컴포넌트의 mainPageClick 이벤트를 유발하고 상위 컴포넌트인 MainComp에서 mainPageClick 이벤트를 통해 최상위 컴포넌트의 pageClick 발생 시킨다.
+// emit을 통해 부모 컴포넌트의 mainPageClick 이벤트를 유발하고 상위 컴포넌트인 MainComp에서 mainPageClick 이벤트를 통해 최상위 컴포넌트의 pageClick을 호출한다.
 function handlePageClick(pageVal) {
   emit('mainPageClick', pageVal);
 }
@@ -116,26 +112,26 @@ function handlePageClick(pageVal) {
 
 
 ##### 1.1.2 검색
-SearchBar 컴포넌트를 통해 검색 기능을 구현 하였고 검색 대상 필드, 검색어 값등을 emit 통해 전달 한다.
+SearchBar 컴포넌트를 통해 검색 기능을 구현 하였고 검색 대상 필드, 검색어 값 등을 emit메서드를 통해 전달 한다.
 - SearchBar.vue
 ```js
-    <v-card-text>
-      <v-text-field
-        :loading="loading"
-        append-inner-icon="mdi-magnify"
-        density="compact"
-        label="Search templates"
-        variant="solo"
-        hide-details
-        single-line
-        @click:append-inner="userSearch"
-        // 검색 대상 필드 선택이나 검색어 입력, 검색 버튼 클릭 시 이벤트를 발생 시킴
-        @update:modelValue="inputSearch"
-        @userSearch="userSearch"
-      ></v-text-field>
+<v-text-field
+  :loading="loading"
+  append-inner-icon="mdi-magnify"
+  density="compact"
+  label="Search templates"
+  variant="solo"
+  hide-details
+  single-line
+    // @click, @update, @userSearch를 통해 검색 대상 필드 선택이나 검색어 입력, 검색 버튼 클릭 시 이벤트를 발생 시킴
+  @click:append-inner="userSearch"
+  @update:modelValue="inputSearch"
+  @userSearch="userSearch"
+>
+</v-text-field>
 ...
 const emit = defineEmits(['pageClick', 'selectFiled', 'inputSearch', 'mainPageClick'])
-// 발생된 이벤트에서 emit 부모 컴포넌트로 인수 전달, 이벤트 유발
+// 발생된 이벤트에서 emit메서드로 부모 컴포넌트로 인수를 전달하고, 이벤트 발생 시킨다.
 const selectFiled = (selectSearchFiled) => {
   emit('selectFiled', selectSearchFiled);
 }
@@ -175,9 +171,7 @@ const userSearch = () => {
 ![Image](https://github.com/user-attachments/assets/10fc4ada-0717-4cc6-aa5f-1c36e33b87b1)
 
 #### 1.2 Vuex 라이브러리 사용 방식
-여러 컴포넌트간에 저장소 공유를 위해 Vuejs 애플리케이션에 대한 상태 관리 패턴 라이브러리인 Vuex를 사용해 보았으며 state와 mutations, 비동기 작업 처리를 위한 actions를 store.js에 선언 하여 사용 하였다.  
-- 참고  
-<https://v3.vuex.vuejs.org/kr/>
+여러 컴포넌트간에 저장소 공유를 위해 Vuejs 애플리케이션에 대한 상태 관리 패턴 라이브러리인 Vuex를 사용해 보았으며 state와 mutations, promise 결과에 따른 작업 처리를 위한 actions를 store.js에 선언 하여 사용 하였다.
 
 ##### 1.2.1 store.js
 - store.js
@@ -204,7 +198,7 @@ mutations: {
       state.showRoleListModal = !state.showRoleListModal
     },
     ...
-// 비동기 처리가 필요한 기능은 actions을 통해 정의한다.
+// Promise 반환 처리가 필요한 기능은 actions을 통해 정의한다. await 작업은 동기적이지만 Vuex 상태변이는 비동기적인 관점이다. 
 actions: {
 async getUserData ({ state, commit }) {
   await Axios.post('http://localhost:8090/api/v1/user/userDetail',
@@ -239,7 +233,7 @@ UserList 컴포넌트에서 수정 버튼 클릭 시 ModifyModal 보이게 하�
 // click 리스너를 통해 onClick 이벤트를 발생 시키고 setRoleUserSave mutations로 사용자 권한 state를 수정하고 userUpdate action으로 사용자 수정 api url을 호출한다.
 <v-btn class="mt-2" type="submit" @click="userUpdate" block>Submit</v-btn>
 ...
-// 
+// userUpdate에서 api 전달할 사용자 권한 리스트 state를 setRoleUserSave mutations을 통해 수정하고 store.dispatch('userUpdate')로 action 호출한다.
 function userUpdate(){
   const roleUserSave = ref([]);
 
@@ -254,10 +248,12 @@ function userUpdate(){
 
 - store.js
 ```js
+...
 // store의 사용자 권한 state를 수정 mutations
 setRoleUserSave (state, roleUserSave) {
   state.roleUserSave = roleUserSave;
 }
+...
 // store.dispatch('userUpdate')를 통해 userUpdate 액션을 호출하게 되고 사용자 정보와 수정된 데이터를 전달하여 사용자를 수정한다.
 async userUpdate ({ state, commit }) {
   console.log('userUpdate state.userDetail : ' + JSON.stringify(state.userDetail));
@@ -288,13 +284,16 @@ async userUpdate ({ state, commit }) {
 ```
 - 사용자 수정 동작화면
 
+![Image](https://github.com/user-attachments/assets/cae39db4-4a9f-4f46-9f11-dbe54fa440c2)
+
 ### 2. 사용자 권한 수정
-사용자는 여러 Role을 가질 수 있으며 해당 Role을 가진 사용자가 다수가 존재 할 수 있어 중간 관계 테이블을 추가하여 사용자와 Role 데이터를 관리 하도록 구성 하였다.
+스프링 프로젝트에서 사용자는 여러 권한을 가질 수 있으며 해당 권한을 가진 사용자가 다수가 존재 할 수 있어 중간 관계 테이블을 추가하여 사용자와 권한 데이터를 관리 하도록 구성 하였다.
+- 백엔드의 권한 제어 부분
 ```java
 .requestMatchers("/api/v1/admin/*").hasAnyRole("ADMIN", "MANAGER")
 .anyRequest().authenticated());
 ```
-백엔드 영역에서 Spring Security SecurityConfig에서도 관리자 권한을 여러 권한으로 체크 하도록 하였으므로 사용관 관리 페이지에서 사용자 수정 팝업업 호출 시 기존 사용자가 가진 권한을 DB에서 가져오도록 하였다.
+백엔드 영역에서 Spring Security의 SecurityConfig에서 관리자 권한을 여러 권한으로 체크 하도록 하였으므로 사용관 관리 페이지에서 사용자 수정 팝업 호출 하여 여러 권한을 추가, 삭제 할 수 있도록 하였다..
 
 - store.js
 ```js
@@ -302,6 +301,7 @@ async userUpdate ({ state, commit }) {
 async getRoleList ({ state, commit }) {
   await Axios.post('http://localhost:8090/api/v1/user/roleList',
     state.exceptRoleList,
+    // 현재 수정 팝업에 있는 권한 리스트를 state.exceptRoleList에 저장 하여 요청하여 추가 요청 대상 권한 리스트를 리턴 한다.
     {
       headers: {
         access: localStorage.getItem('access')
@@ -311,18 +311,29 @@ async getRoleList ({ state, commit }) {
   ).then(response => {
     commit('setRoleList', response.data);
 ```
-Role리스트를 호출 시 현재 팝업창에서 가져온 사용자의 Role 리스트를 제외한 리스트를 보여 주도록 하였다. Role 추가 후 저장 시 Role 데이터를 가진 state를 request 값으로 전달하여 사용자의 Role 정보가 업데이트 되도록 하였다.
+- 권한 리스트 팝업 동작
 
-![2_modify](https://github.com/user-attachments/assets/77c1f9c9-1256-437e-84dd-0ac3ed586c92)
+![Image](https://github.com/user-attachments/assets/0a60a91d-7de4-42d6-b96a-63eda91d4493)
 
+Role리스트를 호출 시 현재 팝업창에서 가져온 사용자의 권한 리스트를 제외한 리스트를 보여 주도록 하였다. 권한 추가 후 저장 시 권한 데이터를 가진 state를 request 값으로 전달하여 사용자의 권한 정보가 업데이트 되도록 하였다.
+
+- store.js
 ```js
-      await Axios.post('http://localhost:8090/api/v1/user/userUpdate',
-        {
-          id: state.userDetail.id,
-          loginId: state.userDetail.loginId,
-          userName: state.userDetail.userName,
-          userPassword: state.userDetail.userPassword,
-          //유저 정보 업데이트 시 업데이트 될 Role 리스트를 함께 전달 한다
-          roleUserSave: state.roleUserSave
-      },
+// store의 사용자 업데이트 요청 action
+async userUpdate ({ state, commit }) {
+  await Axios.post('http://localhost:8090/api/v1/user/userUpdate',
+    {
+      id: state.userDetail.id,
+      loginId: state.userDetail.loginId,
+      userName: state.userDetail.userName,
+      userPassword: state.userDetail.userPassword,
+      //유저 정보 업데이트 시 업데이트 될 권한 리스트를 함께 전달 한다
+      roleUserSave: state.roleUserSave
+  },
 ```
+- 권한 리스트 수정 동작
+
+![Image](https://github.com/user-attachments/assets/0d49e3cf-a5d5-4123-8e41-9c250024567f)
+
+# - 결론 및 향후 계획
+react와 react 프레임워크인 nextjs를 통해 개인 프로젝트를 구현 후 react와 함께 가장 많이 언급되는 자바스크립트 프레임워크인 Vuejs 접해 보기 위해 해당 프로젝트를 진행 하였으며 실제 대고객 서비스를 제공 하진 않았기에 react에 비하여 렌더링 성능 차이등은 체감 하지 못하였으나 Vuejs 자체 제공 문법에 익숙해 진다면 react에 비해 학습 하기에 접근성이 낮고 생산성이 높을것 같다는 생각을 하였다. 해당 프로젝트에서는 Vuejs의 일부 기능만을 사용하여 진행 하였기 때문에 향후에는 Nuxt.js 프레임워크와 상태관리 라이브러리인 Pinia를 학습 할 예정이다.

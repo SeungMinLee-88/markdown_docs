@@ -17,6 +17,18 @@
 - Vuejs를 위한 디자인 UI 프레임워크 vuetify를 사용하여 페이지 디자인을 구현 하였으며 백엔드 부분의 데이터 처리를 위해 Axios 라이브러리를 사용
 
 <br /><br />
+-  컴포넌트 구조
+```mermaid
+flowchart TB
+  subgraph App.vue
+    subgraph MainComp.vue
+        UserList.vue
+        SearchBar.vue
+        ModifyModal.vue
+        RoleListModal.vue
+    end
+  end
+```
 
 # - 상세기능
 ### 1. 데이터 처리
@@ -26,11 +38,12 @@
 props 사용 방식을 통해 하위 컴포너트로 데이터를 전달하고 자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 하위 컴포넌트의 클릭 이벤트 등에 대한 처리는 **emit** 메서드를 통해 이벤트를 호출 하는 방식으로 구현 하였으며 사용자 리스트의 페이징과 검색 기능에 props을 통한 데이터 전달 방식을 사용 하였다.
 
 ##### 1.1.1 페이징
+페이징은 UserList 컴포넌트에 구현 하였으며 부모 컴포넌트와 페이징에 관련된 prop를 전달받고 이벤트를 발생시킨다.
 - App.vue
 ```js
 
 <MainComp
-// 상위 컴포넌트는 userList, currentPage 값 등을 UserList 전달하고 @pageClick을 통해 이벤트를 수신한다
+// 상위 컴포넌트는 userList, currentPage 값 등을 UserList 컴포넌트에 전달하고 @pageClick을 통해 이벤트를 수신한다
   :userList=userList
   :currentPage=currentPage
   :pageLength=pageLength
@@ -44,7 +57,7 @@ props 사용 방식을 통해 하위 컴포너트로 데이터를 전달하고 �
 />
 ...
 
-// Axios를 통해 사용자 리스트를 요청하는 api 호출 
+// getData에서 Axios를 통해 사용자 리스트를 요청하는 api url 호출 
 const getData = async () => {
 
 await Axios.get('http://localhost:8090/api/v1/user/userList', {
@@ -59,10 +72,9 @@ await Axios.get('http://localhost:8090/api/v1/user/userList', {
         access: localStorage.getItem('access')
       },
   }).then((response) => {
-
+      // 사용자 리스트와 페이징 값을 리턴 받는다.
       userList.value = response.data.content;
       pageLength.value= response.data.totalPages;
-
   }).catch(function (error) {
     console.log('error : ' + error)
   });
@@ -73,13 +85,12 @@ const pageClick = (page) => {
   getData();
 }
 ``` 
-위 처럼 상위 컴포너트를 통해 자식 컴포넌트로 값을 전달 하고
+위 처럼 상위 컴포너트를 통해 자식 컴포넌트로 값을 전달 하고 자식컴포넌트 들에서도 **defineProps**를 매크로를 사용하여 props를 선언하여 구현 하였다.
+
 - MainComp.vue
 ```js
 const props = defineProps(['userList', 'currentPage', 'pageLength', 'showModal'])
 ```
-자식컴포넌트에서도 **defineProps**를 매크로를 사용하여 props를 선언하여 구현 하였다.
-
 - UserList.vue
 ```js
 ...
@@ -91,11 +102,12 @@ function handlePageClick(pageVal) {
   emit('mainPageClick', pageVal);
 }
 ...
-// @update:model-value="handlePageClick"를 통해 ref 값 변경 시 handlePageClick을 호출하고 pagination에 부모로 부터 받은 props.currentPage, props.pageLength을 할당받는다.
 <v-pagination
+    //pagination에 부모로 부터 받은 props.currentPage, props.pageLength을 할당받는다.
     v-model="props.currentPage"
     :length="props.pageLength"
     rounded="circle"
+    // @update:model-value="handlePageClick"를 통해 ref 값 변경 시 handlePageClick을 호출
     @update:model-value="handlePageClick">
 </v-pagination>
 ```
@@ -104,11 +116,9 @@ function handlePageClick(pageVal) {
 
 
 ##### 1.1.2 검색
-
+SearchBar 컴포넌트를 통해 검색 기능을 구현 하였고 검색 대상 필드, 검색어 값등을 emit 통해 전달 한다.
 - SearchBar.vue
 ```js
-...
-// 검색 대상 필드 선택이나 검색어 입력, 검색 버튼 클릭 시 이벤트를 발생 시키도록 하고
     <v-card-text>
       <v-text-field
         :loading="loading"
@@ -119,14 +129,13 @@ function handlePageClick(pageVal) {
         hide-details
         single-line
         @click:append-inner="userSearch"
+        // 검색 대상 필드 선택이나 검색어 입력, 검색 버튼 클릭 시 이벤트를 발생 시킴
         @update:modelValue="inputSearch"
         @userSearch="userSearch"
       ></v-text-field>
-```
-```js
-// 발생된 이벤트에서 emit 부모 컴포넌트로 인수 전달, 이벤트 유발
+...
 const emit = defineEmits(['pageClick', 'selectFiled', 'inputSearch', 'mainPageClick'])
-
+// 발생된 이벤트에서 emit 부모 컴포넌트로 인수 전달, 이벤트 유발
 const selectFiled = (selectSearchFiled) => {
   emit('selectFiled', selectSearchFiled);
 }
@@ -142,7 +151,7 @@ const userSearch = () => {
 ```
 - App.vue
 ```js
-// emit으로 검색 필드와 검색 텍스트를 전달 받고 사용자 검색 이벤트가 발생된다.
+
 <MainComp
   :userList=userList
   :currentPage=currentPage
@@ -152,36 +161,41 @@ const userSearch = () => {
   @inputSearch='inputSearch'
   :searchFiled='searchFiled'
   :searchTxt='searchTxt'
+  // emit으로 검색 필드와 검색 텍스트를 전달 받고 사용자 검색 이벤트가 발생된다
   @userSearch='userSearch'
   @showModalPop='showModalPop'
 />
 ...
+// userSearch에서 getData를 호출하여 검색필드와 검색어를 사용자 리스트 api url에 전달한다. 
 const userSearch = () => {
   getData();
 }
 ```
 - 검색 동작화면
-![Image](https://github.com/user-attachments/assets/9b10a027-20aa-40bf-9fba-7a51560418cc)
+![Image](https://github.com/user-attachments/assets/10fc4ada-0717-4cc6-aa5f-1c36e33b87b1)
 
 #### 1.2 Vuex 라이브러리 사용 방식
-여러 컴포넌트간에 저장소 공유를 위해 Vuejs 애플리케이션에 대한 상태 관리 패턴 라이브러리인 Vuex 사용해 보았으며 state와 mutations, 비동기 작업 처리를 위한 actions를 store.js에 선언 하여 사용 하였다.  
+여러 컴포넌트간에 저장소 공유를 위해 Vuejs 애플리케이션에 대한 상태 관리 패턴 라이브러리인 Vuex를 사용해 보았으며 state와 mutations, 비동기 작업 처리를 위한 actions를 store.js에 선언 하여 사용 하였다.  
 - 참고  
 <https://v3.vuex.vuejs.org/kr/>
-
 
 ##### 1.2.1 store.js
 - store.js
 ```js
 export const store = new Vuex.Store({
+  // 컴포넌트들에서 공유할 state를 정의
   state: {
-    count: 0,
-    count2: 10,
     showModifyModal: false,
     showRoleListModal: false,
     userId: 0,
-    ...
-    
-// state를 통해 선언된 상태를 mutations를 통해서 변경
+    userDetail: [],
+    exceptRoleList: [0],
+    roleList: [],
+    updateRoleList: [],
+    roleUserSave: []
+
+  },
+// 컴포넌트에서 state를 변경을 위한 mutations를 정의
 mutations: {
     showModifyModal (state) {
       state.showModifyModal = !state.showModifyModal
@@ -190,7 +204,7 @@ mutations: {
       state.showRoleListModal = !state.showRoleListModal
     },
     ...
-// async 사용하는 비동기 처리 함수는 actions을 통해 처리
+// 비동기 처리가 필요한 기능은 actions을 통해 정의한다.
 actions: {
 async getUserData ({ state, commit }) {
   await Axios.post('http://localhost:8090/api/v1/user/userDetail',
@@ -205,10 +219,10 @@ async getUserData ({ state, commit }) {
     commit('setUserDetail', response.data);
 ... 
 ```
-store에 선언된 state와 mutations, actions를 통해 사용자의 상세 정보, 정보 수정, 삭제 등을 처리 하였다
-
+store에 선언된 state와 mutations, actions를 통해 사용자의 상세 정보, 정보 수정, 삭제 등을 처리 할수 있도록 하였다.
 
 ##### 1.2.2 사용자 수정
+UserList 컴포넌트에서 수정 버튼 클릭 시 ModifyModal 보이게 하여 사용자 수정 기능이 가능 하도록 하였다.
 - UserList.vue
 ```js
 ...
@@ -222,7 +236,7 @@ store에 선언된 state와 mutations, actions를 통해 사용자의 상세 정
 
 - ModifyModal.vue
 ```js
-// click 리스너를 통해 onClick 이벤트를 발생 시키고 setRoleUserSave mutations로 사용자 권한 state를 수정하고 userUpdate action으로 사용자 수정 api를 호출한다.
+// click 리스너를 통해 onClick 이벤트를 발생 시키고 setRoleUserSave mutations로 사용자 권한 state를 수정하고 userUpdate action으로 사용자 수정 api url을 호출한다.
 <v-btn class="mt-2" type="submit" @click="userUpdate" block>Submit</v-btn>
 ...
 // 
@@ -244,7 +258,7 @@ function userUpdate(){
 setRoleUserSave (state, roleUserSave) {
   state.roleUserSave = roleUserSave;
 }
-// store의 사용자 수정 api를 호출 action으로
+// store.dispatch('userUpdate')를 통해 userUpdate 액션을 호출하게 되고 사용자 정보와 수정된 데이터를 전달하여 사용자를 수정한다.
 async userUpdate ({ state, commit }) {
   console.log('userUpdate state.userDetail : ' + JSON.stringify(state.userDetail));
   await Axios.post('http://localhost:8090/api/v1/user/userUpdate',

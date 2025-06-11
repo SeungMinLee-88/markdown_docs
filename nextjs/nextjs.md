@@ -325,23 +325,23 @@ async function chkAuthor(){
     // ManagerUser 컴포터넌트 접근 시 마운트가 완료되면 권한을 체크하는 chkAuthor를 호출 한다.
     useEffect(() => {
         chkAuthor()
-        // 페이지 렌더링 시 권한 확인
     }, []);
 ```
-- ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시
-정상적으로 페이지에 접근 할 수 있다.
+- ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시\
+
 ![Image](https://github.com/user-attachments/assets/0533548a-98b7-40fc-8fb3-5704ff3a9307)
 
+정상적으로 페이지에 접근 할 수 있다.
 
 ## 2. 게시판
 ### 1.1 기본기능 및 페이징, 검색 기능
 게시판 부분은 기본 CRUD 기능을 구현 하였으며 페이징 처리를 Semantic UI의 Pagination 컴포넌트를 통해 구현 하였다.
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449951916-7104c2ed-7819-421f-abf6-efc3cbd6506f.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040420Z&X-Amz-Expires=300&X-Amz-Signature=1ca08ea40665f7bd93156159c6b2c94ba57b73eab996fabdc588c9342256df38&X-Amz-SignedHeaders=host)
+- 페이징 기능 동작
+![Image](https://github.com/user-attachments/assets/72f8d7fe-9367-43be-96d6-b02b62397878)
 
 ```js
 <Pagination
-          /* activePage={currentPage} */
           boundaryRange={0}
           defaultActivePage={1}
           ellipsisItem={null}
@@ -351,63 +351,65 @@ async function chkAuthor(){
           totalPages={TotalPage}
           onPageChange={(_, { activePage }) => goToPage(activePage)}
         />
-        // Pagination Props 값을 설정하면 원하는 형태의 페이징 UI를 보여 줄 수 있다.
+        // Pagination 컴포넌트에 Props 값을 설정하면 원하는 형태의 페이징 UI를 보여 줄 수 있다.
 ```
 또한 게시판의 검색기능 구현에는 react reducer 함수를 사용해 보았다.
 
+- 검색 기능 동작
+![Image](https://github.com/user-attachments/assets/6d8c14cf-c5cf-45ed-a91e-38806bde2838)
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449952051-b36255a4-f132-4c1c-879a-61a2a7b69df4.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040531Z&X-Amz-Expires=300&X-Amz-Signature=fe86222d1ecd8cccc7ea8a1415719f543b658583e1f569e5165d066b5235a919&X-Amz-SignedHeaders=host)
-
+- BoardList.js
 ```js
-  const [state, dispatch] = React.useReducer(searchReducer, initialState);
-  const { loading, value, searchKey } = state;
-  ...중략
-  const timeoutRef = React.useRef()
-  const handleSearchChange = (e, data) => {
-    clearTimeout(timeoutRef.current)
-    // 검색 입력칸에 검색어 입력 시 reducer 호출
-    dispatch({ type: 'START_SEARCH', query: data.value })
-    changeSearchValue(data.value);
-    setCurrentPage(1);
-    timeoutRef.current = setTimeout(() => {
-      if (data.value.length === 0) {
-        dispatch({ type: 'CLEAN_QUERY' })
-        return
-      }
-      dispatch({
-        type: 'FINISH_SEARCH',
-      })
-    }, 300)
-  }
-  const handleSearchKey = (e) => {
-    // 검색 필드 변경 시 reducer 호출
-    dispatch({ type: 'UPDATE_SELECTION', query: e.target.value });
-    changeSearchKey(e.target.value);
-    setCurrentPage(1);
-  }
-  ...중략
-    <select
-      value={searchKey}
-      onChange={handleSearchKey} style={{width: 100}}>
-      <option value="boardTitle">Title</option>
-      <option value="boardWriter">Writer</option>
-    </select>
-      
-      <Search
-          loading={loading}
-          placeholder='Search...'
-          value={value}
-          onSearchChange={handleSearchChange}
-          showNoResults={false}
-        />
-   </div>
-```
-검색 필드, 텍스트가 변경 시 handleSearchChange에서 이벤트를 처리하며 handleSearchChange는 searchReducer로 이벤트 유형 및 값을 전달 한다.
-
-
-```js
+// reducer 사용하기 위해 useReducer로 선언하고 initialState로 초기 값을 설정한다.
+const [state, dispatch] = React.useReducer(searchReducer, initialState);
+// reducer로 관리 될 대상들
+const { loading, value, searchKey } = state;
+...중략
+const timeoutRef = React.useRef()
+const handleSearchChange = (e, data) => {
+  clearTimeout(timeoutRef.current)
+  // 최초 요청 시 START_SEARCH 타입으로 searchReducer가 호출된다.
+  dispatch({ type: 'START_SEARCH', query: data.value })
+  changeSearchValue(data.value);
+  setCurrentPage(1);
+  // 검색 요청이 완료되면 FINISH_SEARCH 타입으로 searchReducer가 호출되며 검색 필드가 비워지면 CLEAN_QUERY 타입으로 호출한다.
+  timeoutRef.current = setTimeout(() => {
+    if (data.value.length === 0) {
+      dispatch({ type: 'CLEAN_QUERY' })
+      return
+    }
+    dispatch({
+      type: 'FINISH_SEARCH',
+    })
+  }, 300)
+}
+const handleSearchKey = (e) => {
+  // 검색 대상 필드 변경 시 UPDATE_SELECTION 타입으로 searchReducer 호출
+  dispatch({ type: 'UPDATE_SELECTION', query: e.target.value });
+  changeSearchKey(e.target.value);
+  setCurrentPage(1);
+}
+...중략
+  <select
+    value={searchKey}
+    // 검색 대상 필드 변경 시 handleSearchKey를 호출
+    onChange={handleSearchKey} style={{width: 100}}>
+    <option value="boardTitle">Title</option>
+    <option value="boardWriter">Writer</option>
+  </select>
+    
+    <Search
+        loading={loading}
+        placeholder='Search...'
+        value={value}
+        // 검색 입력칸에 검색어 입력 시 handleSearchChange를 호출
+        onSearchChange={handleSearchChange}
+        showNoResults={false}
+      />
+  </div>
+...
 function searchReducer(state, action) {
-  // 호출된 reducer에서 action.type에 따라 분기하여 처리
+  // searchReducer 호출되면 reducer에서 action.type에 따라 분기하여 처리한다.
   switch (action.type) {
     case 'CLEAN_QUERY':
       return initialState
@@ -427,61 +429,80 @@ const initialState = {
   searchKey: ''
 }
 ```
-reducer를 통해 state를 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다.\
+reducer를 사용하지 않았다면 3개의 state를 만들고 state를 처리하는 로직을 전부 만들어서 처리해야 하는데 reducer를 통해 loading ,value, searchKey 값을 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다. \
 참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
 
 
 ### 1.2 첨부 파일 처리
 게시판 글쓰기, 수정의 경우 게시글에 첨부 파일을 첨부 하고 이미지 표시, 다운로드 할 수 있는 기능을 추가 했으며 파일 업로드 기능에 react의 useRef를 사용하여 react가 관리하는 DOM 노드에 접근하는 기능을 간단히 구현 해보았다.
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449953044-dcac3ec8-461c-4f8e-8a9e-bf501b6a42a4.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T040911Z&X-Amz-Expires=300&X-Amz-Signature=e1eb2aa17e3cae0d4d9695d79c984a688915be9e163a74a27025a89e3f256f8f&X-Amz-SignedHeaders=host)
 
-![Image](h)
+- 파일 첨부 동작
+![Image](https://github.com/user-attachments/assets/ae2dc1f8-c5de-4eb6-9f34-5b62f5f92f2f)
 
+#### 1.2.1 파일 첨부
 - BoardWrite.js
 ```js
-..  Ref를 선어 후 
+// file 타입 DOM노드를 제어하기 위해 useRef를 선언
 const fileInputRef1 = useRef();
-...중략
-
+useEffect(() => {
+  setUserName(window.sessionStorage.getItem("loginId"))
+}, [fileList]);
+...
+const renderFileList = () => (
+<div>
+  <li>
+    Attached File : {fileList.length}
+  </li>
+  <ol>
+    {[...fileList].map((f, i) => (
+        <li key={i}>{f.name} - {f.type}</li>
+    ))}
+  </ol>
+</div>  )
+...
 <Form.Field>
+/* file input의 ref 속성에 fileInputRef1을 할당한다. */
 <input type="file" name='files' multiple onChange={fileChange} ref={fileInputRef1} hidden/>
+/* 파일이 첨부되면 fileChange를 통해 fileList state를 변경하고 renderFileList를 통해 jsx를 리턴한다 useEffect에서 fileList가 변경되면 다시 렌더링 하게되어 화면에서 파일 리스트를 확인 할 수 있다.*/
 {renderFileList()}
 <button type="button"
     name = "fileBtn"
     className="ui icon left labeled button"
     labelposition="left"
     icon="file"
+    /* 버튼을 클릭하면 fileInputRef1를 통해 file DOM에 접근할 수 있다.*/
     onClick={() => fileInputRef1.current.click()}
   ><i aria-hidden="true" className="file icon"></i>Choose File</button>
 </Form.Field>
 ```
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449953245-ccffe91a-6218-4aef-812e-f5d6a9e03721.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041108Z&X-Amz-Expires=300&X-Amz-Signature=0855f350f8e52ebd01cee28f9e899df743158c218626699506f1830ba09de08b&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/f0e0e9f1-28cc-4135-9945-33dc1efc8f92)
 
-file input을 hidden으로 숨김 처리하고 fileInputRef1 선언 후 선언한 fileInputRef1 &lt;input ref={fileInputRef1}> 처럼 어트리뷰트로 전달하여
-fileInputRef1.current에서 input DOM 노드 읽게하여 fileInputRef1.current.click() 부분으로 click 이벤트를 발생 시키는 방식으로 구혀하였다.
+file input을 hidden으로 숨김 처리하고 fileInputRef1 선언 후 선언한 fileInputRef1 &lt;input ref={fileInputRef1}> 처럼 어트리뷰트로 전달하여 fileInputRef1.current에서 input DOM 노드 읽게하여 fileInputRef1.current.click() 부분으로 click 이벤트를 발생 시키는 방식으로 구현하였다.
 
+#### 1.2.2 파일 전송
 - BoardWrite.js
 ```js
 const [fileList, setFileList] = useState([]);
 
-...중략
-
+...
   const fileChange = e => {
     const newFiles = Array.from(e.target.files);
     setFileList(newFiles)
   };
-...중략
+...
+          // 서버로 전송할 formData를 선언한다.
           const formData = new FormData();
           formData.append("boardTitle", boardTitle);
           formData.append("boardWriter", boardWriter);
           formData.append("boardContents", boardContents);
+          // 파일을 첨부하면 formData에 boardFile을 추가하여 서버에 전송 한다.
           if(fileList.length === 0) {
           }else{
           fileList.forEach((fileList) => {
             formData.append('boardFile', fileList);
            });
           }
-...중략
+...
 await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/boardSave`,
             formData,
             {
@@ -492,26 +513,37 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/boardSave`,
             }
           )
 ```
-react 렌더링한 요소를 서버로 전송할 경우 기존 html 양식 처럼 form을 submit 하는 형태가 아니기에 FormData 객체를 선언 후 전송할 필드와 데이터를 append 후 post 요청으로 첨부 파일을 포함하여 데이터를 전송 하도록 구현 하였다.
+react 렌더링한 요소를 서버로 전송할 경우 기존 html 양식 처럼 form을 submit 하는 형태가 아니기에 FormData 객체를 선언 후 전송할 필드와 데이터를 append 후 POST 요청으로 첨부 파일을 포함하여 데이터를 전송 하도록 구현 하였다.
 
+#### 1.2.3 상세 보기
 - /board/detail/[id].js
 ```js
 useEffect(() => {
   if(board["fileAttached"] === 1){
       setFileList(board["boardFileDTO"]);
-      // filter 함수를 통해 기존 state의 복사본을 생성하여 할당
+      // filter 함수를 통해 기존 state의 복사본을 생성하여 imageFileList에 할당한다.
       setImageFileList(fileList.filter(a => a.mimeType === "image"));
     }
 }, [fileList]);
-... 중략
-          <List bulleted horizontal link>
-            <ListItem active>Attached | </ListItem>
-              {fileList.map((files) => (
-                  
-                  <a key={files.id} role="listitem" id={files.id} className="item"  href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/download/`+files.storedFileName} target="_blank">{files.originalFileName}{files.type}</a>                   
-                
-                ))}
-          </List>
+...
+<p>
+{board.boardContents}
+</p>
+// imageFileList에 이미지 형식 파일만 할당하여 상세보기 화면에서 이미지 파일들만 보여 줄 수 있다.
+{imageFileList.map((imageFiles) => (
+  <div key={imageFiles.id}>
+    <img src={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/download/`+imageFiles.storedFileName} className="ui medium bordered image"/>                     
+  </div>
+  ))}
+<List bulleted horizontal link>
+  <ListItem active>Attached | </ListItem>
+  // 모든 첨부 파일은 다운로드 요청을 할 수 있도록 구현 하였다.
+    {fileList.map((files) => (
+        
+        <a key={files.id} role="listitem" id={files.id} className="item"  href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/download/`+files.storedFileName} target="_blank">{files.originalFileName}{files.type}</a>                   
+      
+      ))}
+</List>
 ```
 
 BoardServiceImpl.class
@@ -534,15 +566,18 @@ BoardServiceImpl.class
     }
   }
 ```
-
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449953527-9bc43e14-0fd9-48d9-bcf2-f1a6f5be983b.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041237Z&X-Amz-Expires=300&X-Amz-Signature=81d4d4a7ce550de3e97c5d786c48790bece69ed76ee8af4d028c7b75f937b352&X-Amz-SignedHeaders=host)
+- 게시판 상세 보기 동작
+![Image](https://github.com/user-attachments/assets/fdd102f9-1d0f-4a23-bce1-f4fbefa848d4)
 
 상세보기에서 첨부된 파일의 타입을 체크하여 이미지일 경우 화면상에 보여 줄수 있도록 state를 만들어 react의 filter 함수를 통해 새로운 새로운 배열을 만들어 할당 할 수 있도록 하였다.\
 참고 - <https://ko.react.dev/learn/updating-arrays-in-state>
 
 
+#### 1.2.4 게시글 수정
 - /board/update/[id].js
 ```js
+...
+// 게시글 수정또한 파일을 첨부하면 formData에 boardFile을 추가하여 서버에 전송 한다.
 if(fileUpdateList.length === 0) {
   }else{
     fileUpdateList.forEach((fileUpdate) => {
@@ -557,7 +592,8 @@ if(fileUpdateList.length === 0) {
         'Content-Type': 'multipart/form-data' 
       }
     })
-... 중략
+...
+// fileDelete는 파일 삭제를 요청하는 api url에 삭제대상 파일 아이디를 파라미터 값으로 요청한다.
 const fileDelete = async function (fileId, boardId) {
     if(window.confirm('Delete attached file?')){
       await Axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/fileDelete/${fileId}&${boardId}`, {
@@ -565,6 +601,7 @@ const fileDelete = async function (fileId, boardId) {
           "Content-Type": "application/json", 
           access: localStorage.getItem("access") 
         },
+        // params는 URL 파라미터
         params: {
           fileId: fileId,
           boardId: boardId
@@ -581,59 +618,82 @@ const fileDelete = async function (fileId, boardId) {
     });
     };
   };
+  ...
+<div>
+<div role="list" className="ui bulleted horizontal link list">
+  <ListItem active>Attached | </ListItem>
+  {fileList.map((files) => (
+  <div key={files.id} id={files.id} role="listitem" className="item"  href={"http://localhost:8090/api/v1/board/download/"+files.storedFileName} target="_blank">{files.originalFileName}
+  // 수정페이지 에서 파일 삭제 버튼을 클릭 시 fileDelete를 호출한다.
+    <i id={files.id} aria-hidden="true" className="delete icon" style={{hover: "background-color: #ff0000"}} onClick={() => fileDelete(files.id, files.boardId)}></i>
+  </div>
+  ))}
+  </div>
+</div>
 ```
 
 BoardServiceImpl.class
 ```java
-  @Transactional
-  public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
-    boardFileRepository.deleteById(fileId);
-    // 특정 id 첨부 파일을 삭제하고
+@Transactional
+public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
+  boardFileRepository.deleteById(fileId);
+  // 요청을 받은 서버는 삭제대상 아이디의 첨부 파일을 삭제하고
+  List<BoardFileEntity> boardFileEntityList = boardFileRepository.findByBoardId(boardId);
 
-    List<BoardFileEntity> boardFileEntityList = boardFileRepository.findByBoardId(boardId);
+  ModelMapper mapper = new ModelMapper();
+  List<BoardFileDTO> fileDTOList = mapper.map(boardFileEntityList, new TypeToken<List<BoardFileDTO>>() {
+  }.getType());
 
-    ModelMapper mapper = new ModelMapper();
-    List<BoardFileDTO> fileDTOList = mapper.map(boardFileEntityList, new TypeToken<List<BoardFileDTO>>() {
-    }.getType());
-
-    if(boardFileEntityList.size() == 0)
-    {
-      // 첨부된 파일이 없을 시 게시글의 첨부 여부 update
-      boardRepository.updatefileAttached(boardId);
-    }
-
-    return fileDTOList;
+  if(boardFileEntityList.size() == 0)
+  {
+    // 첨부된 파일이 없는지 확인하여 게시글의 첨부 여부 업데이트 한다.
+    boardRepository.updatefileAttached(boardId);
   }
-```
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449953695-732de504-5206-4889-ba45-990802761620.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041324Z&X-Amz-Expires=300&X-Amz-Signature=dfe1f82cf91ef9ac161af57a78eeaa419f35a95df8ffdad49f2adf2a9f8993ea&X-Amz-SignedHeaders=host)
+  return fileDTOList;
+}
+```
+![Image](https://github.com/user-attachments/assets/a03cf549-8680-4709-b89f-1755674c431f)
 
 게시판의 수정또한 신규로 첨부되는 파일은 FormData 객체에 append하여 처리 되도록 구현 하였고 게시글의 모든 첨부 파일이 삭제되면 게시글의 파일 첨부여부를 false로 업데이트 되도록 하였다.
 
 
 ### 1.3 동적 라우팅을 통한 접근
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449954006-9f7167c5-fd4e-450a-8d2a-79a7cb5dcd71.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041429Z&X-Amz-Expires=300&X-Amz-Signature=0c1cbefd8516a85676686b026e87fcb18dc93fe3d82f12de6394a2c7e91827fd&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/f03e5b8f-224e-4c67-add9-74df4f0be14d)
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449954050-16f86bfa-aeb6-43b5-868e-f0eb575e5125.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041448Z&X-Amz-Expires=300&X-Amz-Signature=b4c203d9dfe731a8cb6f5d002541045b48f8b0b0858e0b622a152bf89eef6019&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/abf91a2a-88ce-41ab-b1f2-29d1f9ad2175)
 
 게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 동적 세그먼트를 통해 접속이 가능 하도록 하였다.\
 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
 
 - /board/detail/[id].js
 ```js
+...
+// getStaticPaths에서 fallback을 true로 설정하면 Loading 페이지를 보여지도록 할 수 있다.
+  if (router.isFallback) {
+    return (
+      <div style={{ padding: "100px 0" }}>
+        <Loader active inline="centered">
+          Loading
+        </Loader>
+      </div>
+    );
+  }
+...
+
 export async function getStaticPaths() {
-  //사전 렌더링이 필요한 경로를 지정하고
+  //getStaticPaths를 통해 사전 렌더링이 필요한 경로를 지정
   const apiUrl =  `${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/list`;
   const res = await Axios.get(apiUrl);
   const data = res.data;
   return {
-    // getStaticProps paths 값을 넘기게 되는 것이다.
+    // 리턴 시 getStaticProps paths로 값을 넘긴다.
     paths: data.slice(0, 50).map((item) => ({
       params: {
         id: item.id.toString(),
       },
     })),
-    // 그리고 fallback 값에따라 getStaticProps 동작을 지정 할 수 있다.(404 리턴 등)
+    // 그리고 fallback 값에따라 사전 렌더링 범위가 아닌 페이지 요청 시의 getStaticProps의 동작을 지정 할 수 있다.(404 리턴 등)
     fallback: true,
   };
 }
@@ -643,7 +703,6 @@ export async function getStaticProps(context) {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/detail/${id}`;
   const res = await Axios.get(apiUrl);
   const data = res.data;
-
   return {
     props: {
       board: data,
@@ -652,15 +711,14 @@ export async function getStaticProps(context) {
   };
 }
 ```
-또한 getStaticPaths를 통해 동적 라우트를 사용하는 페이지를 정적으로 사전 렌더링 처리를 구현 해보았다.\
-
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/450037246-64596fd5-073a-4a2d-b3fc-993deadeb369.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T081154Z&X-Amz-Expires=300&X-Amz-Signature=48d51529e3ceecac1afaf021768e9665bb07aa274f1da36baa307113a14ed7e9&X-Amz-SignedHeaders=host)\
+getStaticPaths를 통해 동적 라우트를 사용하는 페이지를 정적으로 사전 렌더링 처리 하게되면 
 next build시에 데이터를 가져와 Static Page를 미리 생성하는것을 볼 수 있다.
+
+![Image](https://github.com/user-attachments/assets/f361ae7a-294d-42b5-afa6-809d7cf0bc51)
 
 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/data-fetching/get-static-paths>
 
 
-</br></br>
 ## 3. 코멘트
 ### 1.1 기본기능 및 페이징
 - CommentList.js

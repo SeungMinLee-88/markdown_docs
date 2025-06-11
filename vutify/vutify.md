@@ -23,13 +23,14 @@
 컴포넌트간 데이터 전달을 위해 props와 vuex 라이브러리를 통한 중앙 집중식 저장소 방식 2가지를 사용 해보았다
 
 #### 1.1 props 사용 방식
-props 사용 방식을 통해 하위 컴포너트로 데이터를 전달하고 자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 하위 컴포넌트의 클릭 이벤트 등에 대한 처리는 **emit** 이벤트를 호출 하여 구현 하였다.
+props 사용 방식을 통해 하위 컴포너트로 데이터를 전달하고 자식과 부모 사이는 하향식 단방향 바인딩 형태 이어야 하므로 하위 컴포넌트의 클릭 이벤트 등에 대한 처리는 **emit** 메서드를 통해 이벤트를 호출 하는 방식으로 구현 하였으며 사용자 리스트의 페이징과 검색 기능에 props을 통한 데이터 전달 방식을 사용 하였다.
 
 ##### 1.1.1 페이징
 - App.vue
 ```js
-// currentPage.value를 자식 컴포넌트로 전달하여 UserList 컴포넌트에서 v-pagination에 현재 페이지 값을 전달한다.
+
 <MainComp
+// 상위 컴포넌트는 userList, currentPage 값 등을 UserList 전달하고 @pageClick을 통해 이벤트를 수신한다
   :userList=userList
   :currentPage=currentPage
   :pageLength=pageLength
@@ -90,13 +91,13 @@ function handlePageClick(pageVal) {
   emit('mainPageClick', pageVal);
 }
 ...
+// @update:model-value="handlePageClick"를 통해 ref 값 변경 시 handlePageClick을 호출하고 pagination에 부모로 부터 받은 props.currentPage, props.pageLength을 할당받는다.
 <v-pagination
     v-model="props.currentPage"
     :length="props.pageLength"
     rounded="circle"
     @update:model-value="handlePageClick">
 </v-pagination>
-...
 ```
 - 페이징 동작화면
 ![1_page](https://github.com/user-attachments/assets/90e7f1c7-5f58-40ca-82e4-a6911f056d15)

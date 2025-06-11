@@ -515,7 +515,7 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/boardSave`,
 ```
 react 렌더링한 요소를 서버로 전송할 경우 기존 html 양식 처럼 form을 submit 하는 형태가 아니기에 FormData 객체를 선언 후 전송할 필드와 데이터를 append 후 POST 요청으로 첨부 파일을 포함하여 데이터를 전송 하도록 구현 하였다.
 
-#### 1.2.3 상세 보기
+#### 1.2.3 상세 보기의 첨부파일
 - /board/detail/[id].js
 ```js
 useEffect(() => {
@@ -573,7 +573,7 @@ BoardServiceImpl.class
 참고 - <https://ko.react.dev/learn/updating-arrays-in-state>
 
 
-#### 1.2.4 게시글 수정
+#### 1.2.4 게시글 수정시 첨부파일 처리
 - /board/update/[id].js
 ```js
 ...
@@ -720,17 +720,21 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
 
 
 ## 3. 코멘트
-### 1.1 기본기능 및 페이징
+### 3.1 페이징
+코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.\
+또한 자신이 작성한 코멘트일 경우에만 수정 삭제가 가능 하며 다른 사용자가 작성한 코멘트에는 덧글 달기가 가능 하도록 하였다.
+
 - CommentList.js
 ```js
+// 로그인된 사용자의 정보와 코멘트의 작성자 정보를 비교하여 버튼을 노출 시킨다.
 {userId === commentList["commentWriter"] && <CommentAction commentid={commentList["id"]} onClick={addEdit}>Edit</CommentAction>}
 {userId === commentList["commentWriter"] && <CommentAction commentid={commentList["id"]} onClick={addDelete}>Delete</CommentAction>}
-
-... 중략
+...
 <div>
   <span>Comments</span>
   <Divider />
   {userId !== null &&
+// 로그인 사용자의 정보가 존재 하여야 코멘트 작성 폼이 노출된다.
 <Form onSubmit={addFormSubmit} reply>
   <FormField name='commentContents' label='Comments' as="" control='textarea' rows='3' />
   <button type="submit" className="ui icon primary left labeled button" color="blue">
@@ -738,7 +742,8 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
   Add Comment
   </button>
 </Form>
-... 중략
+...
+
 <Pagination
   activePage={currentPage}
   boundaryRange={0}
@@ -748,20 +753,21 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
   siblingRange={1}
   totalPages={totalPage}
   onPageChange={(_, { activePage }) => goToPage(activePage)}
+  // 게시판과 마찬가지로 Pagination 컴포넌트에 Props 값을 설정하면 원하는 형태의 페이징 UI를 보여 줄 수 있다.
   
 />
 
 ```
+- 코멘트 페이징 동작 및 입력 폼
+
+![Image](https://github.com/user-attachments/assets/1eebe5de-80f7-4895-b9c9-4e851c1dfdc8)
+
+![Image](https://github.com/user-attachments/assets/42c5fde2-4371-4747-8052-1c99b823a9b1)
 
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449954273-77b1c779-b3f8-485b-89c2-e17fcb6e48df.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041608Z&X-Amz-Expires=300&X-Amz-Signature=cf08cb8079a6439f1f6ba5e487b94df73ac51c0fb73a4624f9e7d8611d0e253f&X-Amz-SignedHeaders=host)
+### 3.2 코멘트 리스트
 
-코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.\
-또한 자신이 작성한 코멘트일 경우에만 수정 삭제가 가능 하며 다른 사용자가 작성한 코멘트에는 덧글 달기가 가능 하도록 하였다.
-
-### 1.2 코멘트 리스트
-
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449954482-903dd1b8-9d7b-444f-8c30-9446906280ad.JPG?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T041739Z&X-Amz-Expires=300&X-Amz-Signature=9c5659775125f8d2d55b09c5d5fe04762ddd56740193fc8b7654523a16cf0c99&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/b0a399c4-cf8e-4ee9-99a2-e79b69c4b4d6)
 
 - 코멘트 리스트 요청 시 리턴 형태
 ```json

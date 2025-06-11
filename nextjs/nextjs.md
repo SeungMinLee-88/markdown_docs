@@ -9,7 +9,7 @@
 - Semantic UI React, Axios, FullCalendar 등 라이브러리
 # - 주요기능
 - 사용자인증 :\
-기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 접근 제어, react Context를 통한 컴포넌트 트리에 값 공유
+기본 사용자 인증, JWT 토큰 발급, 재발급, localStorage와 sessionStorage를 통한 사용자 정보 저장, react Context를 통한 컴포넌트 트리에 값 공유
 - 게시판 :\
 기본 게시판 CRUD 기능 및 검색, Semantic UI를 통한 페이징 처리, react reducer를 통한 검색 관련 state 로직 통합, react useRef를 이용한 렌더링 제어 및 DOM 엘리먼트 처리 등
 - 코멘트 :\
@@ -19,13 +19,14 @@
 FullCalendar 라이브러리를 통한 달력 UI 표현, react createRef를 이용한 클래스 컴포넌트 DOM 오브젝트 처리 등
 <br /><br />
 # - 특이사항
-- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router를 통한 구현이 추천되어 Pages Router를 통해 구현 하였으며 향후 App Router 구조로 마이그레이션 진행 예정\
-참고 -\
-<https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>\ <https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>\
+- Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router를 통한 구현이 추천되어 Pages Router를 통해 구현 하였으며 향후 App Router 구조로 마이그레이션 진행 해볼 예정
+- 참고 -\
+<https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>\
+<https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>\
 <https://www.reddit.com/r/nextjs/comments/1gdxcg5/why_do_you_still_prefer_page_router_over_app/>
 
-- 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현\
-참고 -\
+- 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현
+- 참고 -\
 <https://www.dhiwise.com/post/the-power-of-nextjs-custom-routes-in-modern-web-development>\
 <https://medium.com/@farihatulmaria/what-is-the-purpose-of-the-app-js-and-document-js-files-in-a-next-js-application-397f22fed69e>
 
@@ -70,7 +71,7 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/login`,
 ```
 
 ### 1.2 사용자 정보 처리
-로컬과 세션 스토리지에 인증 정보와 사용자 정보를 저장 후 로그인 컴포넌트에서 _app.js로 부터 전달 받은 state setter를 통해 액세스 토큰과 사용자 아이디 값을 state에 저장하고 _app.js는 useEffect를 통해 state의 변경을 감지하여 컴포넌트를 리렌더링 한다
+로컬과 세션 스토리지에 인증 정보와 사용자 정보를 저장 후 로그인 컴포넌트에서 _app.js로 부터 전달 받은 state setter를 통해 액세스 토큰과 사용자 아이디 값을 state에 저장하고 _app.js의 useEffect를 통해 state의 변경을 감지하여 컴포넌트를 리렌더링 한다
 
 - _app.js
 ```js
@@ -79,7 +80,7 @@ export default function MyApp({ Component, pageProps }) {
   const [loginUserId, setLoginUserId] = useState();
   const [loginUserName, setLoginUserName] = useState("");
   const [reissueResult, setReissueResult] = useState(false);
-...중략
+...
 // _app.js의 useEffect를 통해 렌더링 시 state setter로 state에 값을 할당한다.
   useEffect(() => {
     setAccessToken(localStorage.getItem("access"));
@@ -90,8 +91,8 @@ export default function MyApp({ Component, pageProps }) {
 
 ### 1.3 react Context를 통한 자식 컴포넌트로 값 전달
 useEffect를 통한 state 변경 감지 부분 추가는 공유 레이아웃 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 공유 방식을 구현해 보기 위해서이다.  
-(<span style="color:red">**Next.js 13 이후 App Router의 Server Component는 Context Provider를 미지원 하므로 향후 마이그레이션 시에는 Client Component를 이용해 구성해 볼 예정**.</span> )  
-참고 -\
+(<span style="color:red">**Next.js 13 이후 App Router의 Server Component는 Context Provider를 미지원 하므로 향후 마이그레이션 시에는 Client Component를 이용해 구성해 볼 예정.**</span>)  
+- 참고 -\
 <https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers>  
 <https://nextjs-ko.org/docs/app/building-your-application/rendering/server-components>
 
@@ -142,11 +143,11 @@ flowchart TB
   end
   style _app.js text-align:left
 ```
-- ReserveForm
+- Context 구현 예시, ReserveForm.js
 ```js
 import { UserIdContext } from './UserContext.js';
 import { UserNameContext } from './UserContext.js';
-... 생략
+...
 const userId = useContext(UserIdContext);
 const userName = useContext(UserNameContext);
 ```
@@ -155,7 +156,7 @@ _app.js에서 Context를 제공하여 하위 ReserveForm 컴포넌트에서 로�
 ![Image](https://github.com/user-attachments/assets/1a6b8144-b66a-4281-92bc-848544665c5f)
 
 ### 1.4 인증토큰 재발급
-로그인이 필요한 페이지에서는 사용의 인증토큰을 헤더값으로 서버에 전달하여 인증, 만료 여부를 확인 후 페이지를 보여주도록 하였다.
+로그인이 필요한 페이지에서는 사용의 인증토큰을 헤더 값으로 서버에 전달하여 인증 토크의 만료 여부를 확인 후 페이지를 보여주도록 하였다.
 
 - 화면 페이지
 ```js
@@ -204,7 +205,7 @@ async function getData() {
     }
   ).then((response) => {
     
-... 중략
+... 
 
 .catch(async function (error) {
       console.log("error : " + error);
@@ -245,6 +246,7 @@ async function reissueAccessToken()
       {},
       {
         withCredentials: true
+        // 리프레시 토큰은 쿠키로 저장되어 있어 withCredentials을 true로 설정
       }
       )
       .then(function (response) {
@@ -267,7 +269,7 @@ async function reissueAccessToken()
 
 
 ### 1.5 사용자 권한 제어
-Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해당 기능 확인을 위한 사용자 권한을 확인 후 접근을 제어하는 기능을 구현 하였으며 해당 페이지에서는 권한 제어 기능만 구현하고 간략한 사용자 관리 기능은 Vuejs를 통해 구현 하였다.
+Spring Security의 권한 제어 기능을 서버상에 구현 하였으며 해당 기능 확인을 위한 사용자 권한을 확인 후 접근을 제어하는 기능을 구현 하였으며 해당 페이지에서는 권한 제어 기능만 구현하고 간략한 사용자 관리 기능은 Vuejs를 통해 별개 프로젝트로 구현 하였다.
 
 - 서버의 SecurityConfig 클래스
 ```java
@@ -327,14 +329,14 @@ async function chkAuthor(){
         chkAuthor()
     }, []);
 ```
-- ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시\
+- ADMIN이나 MANAGER 권한이 있는 사용자가 페이지 접근 시
 
 ![Image](https://github.com/user-attachments/assets/0533548a-98b7-40fc-8fb3-5704ff3a9307)
 
 정상적으로 페이지에 접근 할 수 있다.
 
 ## 2. 게시판
-### 1.1 기본기능 및 페이징, 검색 기능
+### 2.1 기본기능 및 페이징, 검색 기능
 게시판 부분은 기본 CRUD 기능을 구현 하였으며 페이징 처리를 Semantic UI의 Pagination 컴포넌트를 통해 구현 하였다.
 
 - 페이징 기능 동작
@@ -342,16 +344,16 @@ async function chkAuthor(){
 
 ```js
 <Pagination
-          boundaryRange={0}
-          defaultActivePage={1}
-          ellipsisItem={null}
-          firstItem={null}
-          lastItem={null}
-          siblingRange={1}
-          totalPages={TotalPage}
-          onPageChange={(_, { activePage }) => goToPage(activePage)}
-        />
-        // Pagination 컴포넌트에 Props 값을 설정하면 원하는 형태의 페이징 UI를 보여 줄 수 있다.
+  boundaryRange={0}
+  defaultActivePage={1}
+  ellipsisItem={null}
+  firstItem={null}
+  lastItem={null}
+  siblingRange={1}
+  totalPages={TotalPage}
+  onPageChange={(_, { activePage }) => goToPage(activePage)}
+/>
+// Pagination 컴포넌트에 Props 값을 설정하면 원하는 형태의 페이징 UI를 보여 줄 수 있다.
 ```
 또한 게시판의 검색기능 구현에는 react reducer 함수를 사용해 보았다.
 
@@ -364,11 +366,11 @@ async function chkAuthor(){
 const [state, dispatch] = React.useReducer(searchReducer, initialState);
 // reducer로 관리 될 대상들
 const { loading, value, searchKey } = state;
-...중략
+...
 const timeoutRef = React.useRef()
 const handleSearchChange = (e, data) => {
   clearTimeout(timeoutRef.current)
-  // 최초 요청 시 START_SEARCH 타입으로 searchReducer가 호출된다.
+  // handleSearchChange 호출 시 START_SEARCH 타입으로 searchReducer가 호출된다.
   dispatch({ type: 'START_SEARCH', query: data.value })
   changeSearchValue(data.value);
   setCurrentPage(1);
@@ -389,7 +391,7 @@ const handleSearchKey = (e) => {
   changeSearchKey(e.target.value);
   setCurrentPage(1);
 }
-...중략
+...
   <select
     value={searchKey}
     // 검색 대상 필드 변경 시 handleSearchKey를 호출
@@ -429,17 +431,17 @@ const initialState = {
   searchKey: ''
 }
 ```
-reducer를 사용하지 않았다면 3개의 state를 만들고 state를 처리하는 로직을 전부 만들어서 처리해야 하는데 reducer를 통해 loading ,value, searchKey 값을 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다. \
-참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
+reducer를 사용하지 않았다면 3개의 state를 만들고 state를 처리하는 로직을 전부 만들어서 처리해야 하는데 reducer를 통해 loading ,value, searchKey 값을 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다.
+- 참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
 
 
-### 1.2 첨부 파일 처리
+### 2.2 첨부 파일 처리
 게시판 글쓰기, 수정의 경우 게시글에 첨부 파일을 첨부 하고 이미지 표시, 다운로드 할 수 있는 기능을 추가 했으며 파일 업로드 기능에 react의 useRef를 사용하여 react가 관리하는 DOM 노드에 접근하는 기능을 간단히 구현 해보았다.
 
 - 파일 첨부 동작
 ![Image](https://github.com/user-attachments/assets/ae2dc1f8-c5de-4eb6-9f34-5b62f5f92f2f)
 
-#### 1.2.1 파일 첨부
+#### 2.2.1 파일 첨부
 - BoardWrite.js
 ```js
 // file 타입 DOM노드를 제어하기 위해 useRef를 선언
@@ -479,7 +481,7 @@ const renderFileList = () => (
 
 file input을 hidden으로 숨김 처리하고 fileInputRef1 선언 후 선언한 fileInputRef1 &lt;input ref={fileInputRef1}> 처럼 어트리뷰트로 전달하여 fileInputRef1.current에서 input DOM 노드 읽게하여 fileInputRef1.current.click() 부분으로 click 이벤트를 발생 시키는 방식으로 구현하였다.
 
-#### 1.2.2 파일 전송
+#### 2.2.2 파일 전송
 - BoardWrite.js
 ```js
 const [fileList, setFileList] = useState([]);
@@ -515,7 +517,7 @@ await Axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/boardSave`,
 ```
 react 렌더링한 요소를 서버로 전송할 경우 기존 html 양식 처럼 form을 submit 하는 형태가 아니기에 FormData 객체를 선언 후 전송할 필드와 데이터를 append 후 POST 요청으로 첨부 파일을 포함하여 데이터를 전송 하도록 구현 하였다.
 
-#### 1.2.3 상세 보기의 첨부파일
+#### 2.2.3 상세 보기의 첨부파일
 - /board/detail/[id].js
 ```js
 useEffect(() => {
@@ -529,7 +531,7 @@ useEffect(() => {
 <p>
 {board.boardContents}
 </p>
-// imageFileList에 이미지 형식 파일만 할당하여 상세보기 화면에서 이미지 파일들만 보여 줄 수 있다.
+// imageFileList에 이미지 형식 파일 데이터만 존재하여 상세보기 화면에서 이미지 파일들만 미리보기를 보여 줄 수 있다.
 {imageFileList.map((imageFiles) => (
   <div key={imageFiles.id}>
     <img src={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/board/download/`+imageFiles.storedFileName} className="ui medium bordered image"/>                     
@@ -569,11 +571,11 @@ BoardServiceImpl.class
 - 게시판 상세 보기 동작
 ![Image](https://github.com/user-attachments/assets/fdd102f9-1d0f-4a23-bce1-f4fbefa848d4)
 
-상세보기에서 첨부된 파일의 타입을 체크하여 이미지일 경우 화면상에 보여 줄수 있도록 state를 만들어 react의 filter 함수를 통해 새로운 새로운 배열을 만들어 할당 할 수 있도록 하였다.\
-참고 - <https://ko.react.dev/learn/updating-arrays-in-state>
+상세보기에서 첨부된 파일의 타입을 체크하여 이미지일 경우 화면상에 보여 줄수 있도록 state를 만들어 react의 filter 함수를 통해 새로운 새로운 배열을 만들어 할당 할 수 있도록 하였다.
+- 참고 - <https://ko.react.dev/learn/updating-arrays-in-state>
 
 
-#### 1.2.4 게시글 수정시 첨부파일 처리
+#### 2.2.4 게시글 수정시 첨부파일 처리
 - /board/update/[id].js
 ```js
 ...
@@ -646,7 +648,7 @@ public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
 
   if(boardFileEntityList.size() == 0)
   {
-    // 첨부된 파일이 없는지 확인하여 게시글의 첨부 여부 업데이트 한다.
+    // 첨부된 파일이 없는지 확인하여 게시글의 첨부 여부를 업데이트 한다.
     boardRepository.updatefileAttached(boardId);
   }
 
@@ -658,13 +660,13 @@ public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
 게시판의 수정또한 신규로 첨부되는 파일은 FormData 객체에 append하여 처리 되도록 구현 하였고 게시글의 모든 첨부 파일이 삭제되면 게시글의 파일 첨부여부를 false로 업데이트 되도록 하였다.
 
 
-### 1.3 동적 라우팅을 통한 접근
+### 2.3 동적 라우팅을 통한 접근
 ![Image](https://github.com/user-attachments/assets/f03e5b8f-224e-4c67-add9-74df4f0be14d)
 
 ![Image](https://github.com/user-attachments/assets/abf91a2a-88ce-41ab-b1f2-29d1f9ad2175)
 
-게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 동적 세그먼트를 통해 접속이 가능 하도록 하였다.\
-참고 - <https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
+게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 pages/blog/[slug].js url 형태로 접속 가능 하도록 하였다.
+- 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
 
 - /board/detail/[id].js
 ```js
@@ -687,7 +689,7 @@ export async function getStaticPaths() {
   const res = await Axios.get(apiUrl);
   const data = res.data;
   return {
-    // 리턴 시 getStaticProps paths로 값을 넘긴다.
+    // 리턴 시 getStaticProps로 paths 값을 넘긴다.
     paths: data.slice(0, 50).map((item) => ({
       params: {
         id: item.id.toString(),
@@ -716,7 +718,7 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
 
 ![Image](https://github.com/user-attachments/assets/f361ae7a-294d-42b5-afa6-809d7cf0bc51)
 
-참고 - <https://nextjs-ko.org/docs/pages/building-your-application/data-fetching/get-static-paths>
+- 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/data-fetching/get-static-paths>
 
 
 ## 3. 코멘트
@@ -816,8 +818,8 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
         },
     ]
 ```
-코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 덧글 달기로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.\
-참고 -\
+코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 덧글 달기로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.
+- 참고 -\
 <https://ko.react.dev/learn/updating-objects-in-state>\
 <https://ko.react.dev/learn/updating-arrays-in-state>
 
@@ -825,29 +827,27 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
 ```js
 function recursiveMap(commentLists, level, depthVal) {
     commentLists.map((commentList) => {
-      var depthStyle = depthVal * 20;
-
+      ...
+      // 코멘트에 자식 코멘트 존재 여부 확인
       if(commentList["childrenComments"] !== "" && commentList["childrenComments"] !== null 
         && commentList["childrenComments"].length > 0
       ){
-        // 코멘트에 자식 코멘트 존재 여부 확인
+        
         renderVal.push(<Comment key={commentList["id"]} style={{ paddingLeft: depthStyle }}>
           <CommentContent>
-              ... 중략
+              ... 
           </CommentContent>
          </Comment>
          );
-                 // 배열 전개 구문 ...로 기존 배열에 새로운 렌더링 대상 값을 추가
+        // 배열 전개 구문 ...로 기존 배열에 새로운 렌더링 대상 값을 추가한다.
         setCommentListRender([...commentListRender, 
           renderVal]);
         // 자식 코멘트 존재 시 코멘트 depth 값을 증가 시키기고 재귀 호출로 코멘트 리스트를 다시 만든다.
         recursiveMap(commentList["childrenComments"], "child", depthVal+1)
-
       }else{
-
         renderVal.push(<Comment key={commentList["id"]} style={{ paddingLeft: depthStyle }}>
           <CommentContent>
-            ... 중략
+            ...
          </CommentContent>
          </Comment>);
           setCommentListRender([...commentListRender, 
@@ -860,21 +860,23 @@ function recursiveMap(commentLists, level, depthVal) {
 
 ## 4. 예약
 ### 4.1 기본기능
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449955894-5e2323a1-bb61-4129-8ba2-7ed57cbcda65.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042208Z&X-Amz-Expires=300&X-Amz-Signature=65e094dcebbdc1940de8cfb962c53566c316169bb1a68d60c030de124b08fb65&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/59e3a5f2-6d17-4cbc-8b13-3ce09b4431c0)
+
 예약 페이지는 주말이 아닌 현재 일자 이후만 예약이 가능 하도록 구성 하였다
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449955974-cd4dd349-8fc8-41b7-ae0f-641d06b1bfae.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042232Z&X-Amz-Expires=300&X-Amz-Signature=39f6aa93d0c7dbea14acc61360ccaab916553ad933b7b5ac185f8f289faa0e2b&X-Amz-SignedHeaders=host
-)
+![Image](https://github.com/user-attachments/assets/20e8e41d-80af-471a-b49d-2d3a85cadc90)
+
 원하는 일자 선택 시 예약자 아이디와 이름은 세션에서 가져오도록 하고 예약 시간을 선택한 만큼 예약 기간 값은 업데이트 된다.
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449956089-cde840cf-4fdd-46a4-9d32-0cdfb4621c38.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042315Z&X-Amz-Expires=300&X-Amz-Signature=e1169be3abd20dc774a0fb330f567cd53c38929d9bdb23262a15defa8475013d&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/471a61eb-c517-48dc-b38f-f67e8889408b)
 
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449956180-7f9e20f3-64ba-45eb-b277-690546a0674f.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042344Z&X-Amz-Expires=300&X-Amz-Signature=4af33b2be9931928d1cc34cd97b7b9e5009eedc5a3afcca4f71cd9116b7f0031&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/e6779d37-a772-492c-9364-1f7e31332ba3)
+
 자신이 선택한 예약 리스트 선택 시 예약 시간등을 업데이트 할 수 있으며 리스트가 아닌 일자 선택 시 기존 예약된 시간은 예약이 불가능 하도록 disable 처리 되도도록 하였다.
 또한 예약 리스트는 자신이 예약한 리스트만 보여주도록 구현해 보았다.
 
 ### 4.2 FullCalendar 컴포넌트 사용
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449956538-94857c03-2b63-44ed-bf00-d17648fb7cd5.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042532Z&X-Amz-Expires=300&X-Amz-Signature=2c21589e348c026c4b26182e97d23e5b7ae65ec59f7965ec615414ee7bf91c5f&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/b037c63e-cee5-498f-8f87-8c66c2eb7ff4)
 
 예약 페이지를 구현하기 위해 직접 달력 UI를 만들지 않고 오픈 소스 캘린더 라이브러리인 FullCalendar를 이용해 보았다 Premium 버전 등이 있지만 Standard 버전으로 원하는 기능 구현이 충분 하기에 Standard 버전으로 구성 하였다.
 FullCalendar는 next, prev 버튼에 대한 이벤트 props가 없으므로 customButtons
@@ -883,16 +885,30 @@ setToolBarState를 통해 리렌더링을 발생 시켜 다음월, 이전월의 
 
 - Reserve.js
 ``` js
+...
+async function getData() {
+  await Axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/reserve/reserveList`, {
+      headers: {
+        "Content-Type": "application/json", 
+        access: localStorage.getItem("access") 
+      },
+      params: {
+        reserveDate: toolBarState,
+        // 예약 리스트를 요청하는 api url에 toolBarState 값을 전달하여 원하는 월에 해당하는 예약 리스트만 가져오게 하였다.
+        reserveUserId: userId
+      },
+    }
+...
+// FullCalendar는 클래스 컴포넌트이므로 createRef를 통해 calendarRef를 선언한다.
 const calendarRef = createRef(null);
-
-... 중략
-
-// calendarRef를 통해 FullCalendar 클래스 컴포넌트 객체에 접근
 const handleNextButtonClick = () => {
 if (calendarRef.current) {
+  // calendarRef를 통해 FullCalendar 클래스 컴포넌트 객체에 접근하여 현재 FullCalendar의 currentData 값을 가져올 수 있다.
   const currentMonth = moment(calendarRef.current.calendar.currentData.currentDate).format('YYYYMM');
+    // 또한 calendarRef를 통해 getApi()를 호출하여 calendarApi.next()로 다음 월로 이동 할 수 있다.
   const calendarApi = calendarRef.current.getApi();
   calendarApi.next();
+  // 서버에서 현재 FullCalendar 보여주고 있는 월의 예약 리스트를 가져오기 위해 toolBarState state를 변경 한다.
   setToolBarState(parseInt(currentMonth)+1);
 }
 };
@@ -904,12 +920,10 @@ if (calendarRef.current) {
   setToolBarState(parseInt(currentMonth)-1);
 }
 };
-
-... 중략
-
+... 
 <FullCalendar
     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-
+    // next, prev 버튼을 클릭 시 예약 년월 state를 변경 해주기 위해 customButtons 추가
     headerToolbar={{
       left: 'prev,next today',
       center: 'title',
@@ -925,7 +939,6 @@ if (calendarRef.current) {
         click: handleNextButtonClick
       }
     }}
-    // next, prev 버튼을 클릭 시 예약 년월 state를 변경 해주기 위해  customButtons 추가
     ref={calendarRef}
     initialView='dayGridMonth'
     select={handleSelectedDates}
@@ -935,6 +948,7 @@ if (calendarRef.current) {
     selectMirror={true}
     dayMaxEvents={true}
     weekends={true}
+    // events prop에 reserveData state를 설정
     events={{events: reserveData}}
     // FullCalendar 컴포넌트를 렌더링하고 events 데이터에는 사용자가 예약한 데이터들을 커스텀하게 만들어 할당해 주었다.
     eventTimeFormat={{
@@ -945,7 +959,7 @@ if (calendarRef.current) {
     displayEventEnd={true}
     />
 ```
-서버로 부터 리턴 받은 예약 리스트를 FullCalendar를 events prop에 할당 가능한 형태로 가공하여 처리하였다.
+서버로 부터 리턴 받은 예약 리스트를 FullCalendar를 events prop에 할당 가능한 형태로 가공하여 FullCalendar의 events={{events: reserveData}}로 이벤트를 할당하여 화면에 보여 줄 수 있도록 하였다.
 
 - Reserve.js
 ```js
@@ -970,7 +984,7 @@ for (var timeKey in response.data[responseKey]["reserveTime"]) {
 ```
 
 ### 4.3 예약 시간 처리(react reducer)
-![Image](https://github-production-user-asset-6210df.s3.amazonaws.com/84305801/449957011-5373bd34-87fe-42cd-a91e-44b54b4aea6f.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250602%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250602T042817Z&X-Amz-Expires=300&X-Amz-Signature=8eb9b257f4bc3b36b993dad1c7543e0467f5affdf097d8ffece402b84e40d98f&X-Amz-SignedHeaders=host)
+![Image](https://github.com/user-attachments/assets/f9193c9b-940e-47bb-b8ab-ab352d1205a8)
 
 예약 시간 처리도 게시판의 검색 기능 처럼 react reducer를 이용해 구현 해보 았다. handleTimeChange에서 체크박스의 상태에 따라 times 값을 처리 하도록 하였고 체크된 상태에서 이미 예약이 있는 일자 선택 시 times 값을 false로 처리 하기 위해 useEffect에서 렌더링 시 action.type INITIAL로 reducer를 호출 하도록 하였다.
 
@@ -1004,7 +1018,7 @@ function reserveTimeReducer(times, action) {
       throw new Error()
   }
 }
-... 중략
+...
 // 예약 시간 체크 시 checked 상태에 따라 다른 actionType으로 dispatch 호출
 const handleTimeChange = (e) => {
   let actionType = "";

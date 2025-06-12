@@ -444,6 +444,10 @@ public class JWTFilter extends OncePerRequestFilter {
 ### 2.3 토큰 재발급
 사용자 인증 액세스 토큰이 만료될 경우 리프레시 토큰을 통해 토큰을 재발급 받을 수 있는 기능도 구현 해보았다. 서버의 경우 리프레시을 DB 상에 저장 되도록 구현 하였다.
 
+- DB의 리프레시 토큰
+
+![Image](https://github.com/user-attachments/assets/54973936-1feb-47ac-b0b5-9bdecc2d7a80)
+
 - ReissueController
 ```java
 @PostMapping("/reIssueToken")
@@ -479,20 +483,28 @@ public class JWTFilter extends OncePerRequestFilter {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 ```
-- 토큰 만료 시
-- 리프레시 토큰
-- 토큰 재발급
+- 인증 토큰 만료 시
+
+![Image](https://github.com/user-attachments/assets/a809dbe6-c1cb-4375-9bf1-8ca30058a61c)
+
+- 쿠키에 저장된 리프레시 토큰
+
+![Image](https://github.com/user-attachments/assets/05e57d22-95c2-45b0-970c-6ae3464fae43)
+
+- 토큰 재발급 결과
+
+![Image](https://github.com/user-attachments/assets/1984dc46-c432-46e2-9742-af5ae9af2e18)
 
 ## 3. 게시판
-게시판은 기본적인 CRUD 기능을 구현 하였으며 게시판 구현 시 특이사항에 대해서만 설명 하겠다.
+게시판은 기본적인 CRUD 기능을 구현 하였으며 게시판 구현 시 특이사항에 대해서만 다루어 보겠다.
 
 ### 3.1 게시판 - Pageable, Specification
-게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다. 
+게시판의 페이징과 검색은 Pageable, Specification 인터페이스를 통해 구현 하였다.
 
 - BoardSpecification.class
 ```java
 @AllArgsConstructor
-// Specification을 구현 한다. 레퍼런스 문서를 참고하여 구현한다
+// Specification을 레퍼런스 문서를 참고하여 구현하였다.
 // https://docs.spring.io/spring-data/jpa/reference/jpa/specifications.html
 public class BoardSpecification implements Specification<BoardEntity> {
 
@@ -514,12 +526,25 @@ public class BoardSpecification implements Specification<BoardEntity> {
     }
 }
 ```
+SearchCriteria.class
+``` java
+// BoardSpecification 객체 선언 시 사용되는 인자로 전달 하기 위한 클래스
+@Data
+@AllArgsConstructor
+public class SearchCriteria {
+
+    private String searchKey;
+    private String searchValue;
+
+}
+```
+
+BoardServiceImpl.class
 ```java
 @Override
   public Page<BoardDTO> boardList(Pageable pageable, Map<String, String> params){
 
-    // 컨트롤러에서 Pageable과 검색 Rarams를 받아 서비스 검색 파라미터들은 Specification를 BoardSpecification 객체를 만들고 
-
+    // SearchCriteria 객체에 컨트롤러로 부터 받은 params를 인자로 주고 BoardSpecification 객체를 SearchCriteria 객체를 인자로 주어 생성
     Specification<BoardEntity> specification = new BoardSpecification(new SearchCriteria(params.get("searchKey"), params.get("searchValue")));
     
     // Pageable과 값들은 필요한 PageRequest으 매개변수로 담아 리포지토리로 넘겨주면 페이징 처리된 결과가 리턴된다.
@@ -546,10 +571,12 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 
 
 - Pageable 적용 결과
+
+![Image](https://github.com/user-attachments/assets/96e13ac1-45e1-49b5-a4e4-23580ab85536)
 ```json
 {
     "content": [
-      ...중략
+      ...
         {
             "id": 2,
             "boardWriter": "111",
@@ -595,6 +622,8 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ```
 
 - Specification 적용 결과
+
+![Image](https://github.com/user-attachments/assets/6482f22f-2db9-4d63-920f-502610814933)
 ```json
 {
             "id": 2,
@@ -624,14 +653,16 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
             "fileAttached": 0,
             "boardFileDTO": null
         },
-...생략
+...
 ```
 
-- Pageable, Specification 혼합이 가능하다.
+- Pageable, Specification은 혼합이 가능하다.
+
+![Image](https://github.com/user-attachments/assets/6d213532-952d-42a4-bea1-da49c16a66fc)
 ```json
 {
     "content": [
-...중략
+...
         {
             "id": 9,
             "boardWriter": "testid1",
@@ -677,6 +708,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 
 ### 3.2 게시판 특이사항 - 첨부파일 처리
 게시판에는 첨부파일을 첨부하고 처리하는 기능을 구현 하였다.
+
 - RestBoardController.class
 ```java
 @PostMapping("/boardSave")
@@ -702,7 +734,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ```java
 @Override
   public BoardDTO boardSaveAtta(BoardDTO boardDTO) throws IOException {
-// 게시글 저장 시 첨부파일 존재 여부에 따라 분기하여 처리 한다.
+    // 게시글 저장 시 첨부파일 존재 여부에 따라 분기하여 처리 한다.
     if (boardDTO.getFileList() == null) {
     ... 중략
     } else {
@@ -721,16 +753,17 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
           String mimeType = boardFile.getContentType().substring(0, boardFile.getContentType().indexOf("/"));
           boardFile.transferTo(new File(savePath));
           BoardFileEntity boardFileEntity = BoardFileEntity.toBoardFileEntity(board, originalFilename, storedFileName, mimeType);
-          // 첨부파일 리스트를 저장 처리 한다.
+          // 첨부파일 존재 시 리스트를 저장 한다.
           boardFileRepository.save(boardFileEntity);
         }
       }
-      ...생략
+      ...
   }
 ```
 게시글의 첨부파일 삭제 시 해당 게시글의 첨부파일 존재 여부를 확인하고 모든 첨부 파일 삭제 시 파일 첨부여부를 false로 업데이트 하여 사용자 화면의 첨부리스트 노출 여부를 결정 할 수 있도록 하였다. 
 - RestBoardController.class
 ```java
+// 파일 삭제 처리 컨트롤러
 @GetMapping("/fileDelete/{fileId}&{boardId}")
     public List<BoardFileDTO> fileDelete(@PathVariable Long fileId, @PathVariable Long boardId) {
         List<BoardFileDTO> boardFileDTOList = boardService.fileDelete(fileId, boardId);
@@ -763,16 +796,23 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
   }
 ```
 
+- 첨부파일이 있는 게시글 데이터 및 조회 화면
+
+![Image](https://github.com/user-attachments/assets/df69a95e-a6fe-484e-b440-4ffd5753b97f)
+
+![Image](https://github.com/user-attachments/assets/406b7a8d-919d-43ba-9e04-f3b0fb6253fd)
+
 ## 4. 코멘트
 코멘트도 기본적인 CRUD 기능을 구현 하였으며 게시판과 같이 Pageable 인터페이스를 통해 페이징 처리를 하였으며 코멘트의 경우 답글 기능으로 자기 참조 관계 설정 및 리스트 트리 구현 하였다. 
 
 
 ### 4.1 코멘트 - 리스트 트리
-erd이미지
+
+![Image](https://github.com/user-attachments/assets/bd8e617c-1ffa-48d2-9d44-435d81091a3e)
 
 코멘트는 부모 아이디가 없는 루트 코멘트가 있으며 루트 코멘트에 답글 달기 기능으로 차일드 코멘트가 발생되며 차일드 코멘트 역시 답글이 달리게 되어 부모 코멘트가 되며 해당 답글은 같은 루트 코멘트를 가진 차일드 코멘트가 된다.
 
-테이블 이미지
+![Image](https://github.com/user-attachments/assets/6c2f6080-a7b5-484d-aab3-9acf170563be)
 
 CommentEntity.class
 ```java

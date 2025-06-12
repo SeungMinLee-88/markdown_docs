@@ -1,26 +1,23 @@
 # - 프로젝트 개요
 예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프론트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 백엔드 부분에 대해 중점적으로 다루었다.
-<br /><br />
 # - 개발기간
 - 25.04 ~ 25.05(약 1.5개월)\
-<br /><br />
 # - 개발환경
 - JAVA v1.8
 - Spring Boot, Spring Data Jpa v3.4.3
 - Spring Security v3.4.3
 - Jsonwebtoken v0.12.3
+- gradle v8.13
 - lombok 등 라이브러리 및 Mysql DB
-<br /><br />
 # - 주요기능
 - 사용자인증
-Spring Security 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및 refresh 토큰 발급, 재발급 기능
+Spring Security를 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및 refresh 토큰 발급, 재발급 기능
 - 게시판 :\
 게시판 CRUD 기능, Pageable 인터페이스를 통한 페이징 처리, Specification을 통한 검색 기능, 첨부 파일 처리
 - 코멘트 :\
 코멘트 CRUD 기능, 코멘트 트리 리스트 구현
 - 예약 :\
 예약 CRUD 기능
-<br /><br />
 # - 특이사항
 - Spring Security를 통한 인증 처리, 권한 제어 JWT 인증 토큰 발급/재발급 기능을 통한 사용자 접근 제어
 - Pageble, Specification 인터페이스를 통한 쿼리 리스트 조회 처리
@@ -28,20 +25,20 @@ Spring Security 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및
 - N:N 관계 처리를 위해 중간 테이블 추가 및 데이터 처리
 
 ## 1. DB구조
-### 1.2 사용자
+### 1.1 사용자
 사용자는 여러개의 Role을 가질 수 있고 Role 역시 여러 사용자에게 할당 될 수 있으므로 사용자와 Role은 N:N 관계이며 이를 표현 하기 위해 중간 테이블인 role_user 테이블을 두어 사용자가 추가 될 시 role_user 테이블에 사용자 아이디와 Role 아이디를 가진 데이터가 추가 되어야 한다.
 
-![Image](https://github.com/user-attachments/assets/3ff89efb-cb24-4edf-8514-f769328fc6f7)
+![Image](https://github.com/user-attachments/assets/bd1fd004-4c3c-45c7-a4e3-b89ac4b3c782)
 
 ### 1.2 게시판
 게시판은 게시글을 작성하는 사용자와 N:1, 게시글에 첨부되는 첨부파일과 1:N, 게시글의 코멘트와 1:N 관계이다. 코멘트의 경우 답글 기능으로 자기 참조 데이터가 생성되므로 자기자신을 1:N으로 참조 하게 된다.
 
-![Image](https://github.com/user-attachments/assets/f08b4e4f-d24a-4b90-baa9-914944126c7c)
+![Image](https://github.com/user-attachments/assets/45dccb1d-cf3d-4d53-b10e-c414cc9fc6e0)
 
 ### 1.3 예약
-사용자는 여러 예약을 가질 수 있으므로 사용자와 예약은 1:N 관계이며 예약은 여러개의 예약시간을 가질 수 있고 예약시간 역시 여러 예약에 할당 될 수 있으 예약과 예약시간 N:N 관계이며 이를 표현 하기 위해 중간 테이블인 reserve_time 테이블을 두어 예약이 추가 될 시 reserve_time 테이블에 예약 아이디와 예약시간 아이디를 가진 데이터가 추가 되어야 한다.
+사용자는 여러 예약을 가질 수 있으므로 사용자와 예약은 1:N 관계이며 예약은 여러개의 예약시간을 가질 수 있고 예약시간 역시 여러 예약에 할당 될 수 있으 예약과 예약시간은 N:N 관계이며 이를 표현 하기 위해 중간 테이블인 reserve_time 테이블을 두어 예약이 추가 될 시 reserve_time 테이블에 예약 아이디와 예약시간 아이디를 가진 데이터가 추가 되어야 한다.
 
-![Image](https://github.com/user-attachments/assets/283df42e-6218-4ca5-a86a-8a8dfd5828d3)
+![Image](https://github.com/user-attachments/assets/9fa9f89c-41be-4505-93e1-3622724819aa)
 
 
 ## 2. 프로젝트 기본 구조
@@ -94,10 +91,10 @@ public class BoardEntity extends BaseEntity {
 
 ### 2.2 ORM 기반 구현
 Entity 객체는 BaseEntity를 상속 받도록 하였고 Spring Data JPA 모듈을 사용하여 관계 어노테이션을 통해 엔티티간에 관계를 정의 하였다.
-- BoardEntity.class
+- ex)BoardEntity.class
 ```java
 public class ReserveEntity extends BaseEntity {
-... 중략
+...
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -123,20 +120,20 @@ public class ReserveEntity extends BaseEntity {
 
   @OneToMany(mappedBy = "reserveEntity", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
   private final List<ReserveTimeEntity> reserveTimeEntity = new ArrayList<>();
-  ... 생략
+  ...
 
 ```
 
 ### 2.3 JpaRepository 상속 구현
 각 리포지토리 인터페이스는 JpaRepository를 상속받아 기본 쿼리 메서드를 통해 테이블에 접근하며 인터페이스에 쿼리 메서드를 정의, @Query 어노테이션 사용하여 직접 쿼리 선언하는 방식 등을 통해 구현해 보았다.
 
-- UserServiceImpl.class
+- ex)UserServiceImpl.class
 ```java
 // UserRepository 인터페이스 JpaRepository 상속 받아 기본 제공 메서드를 사용
 userRepository.findById(userDto.getId());
 
 ```
-- UserRepository.class
+- ex)UserRepository.class
 ```java
 
 public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
@@ -148,7 +145,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
 
   UserEntity findByLoginIdAndUserPassword(String loginId, String userPassword);
 
-// @Query 어노테이션을 통해 엔티티에 대한 쿼리를 직접 선언
+  // @Query 어노테이션을 통해 엔티티에 대한 쿼리를 직접 선언
+  // 네이티브 쿼리로 직접 작성하고 싶다면 nativeQuery = true로 설정 
   @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.roleUserEntities")
   Page<UserEntity> findAllWithRelated(Pageable pageable);
 
@@ -156,10 +154,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
   Page<UserEntity> findAllWithPageble(Specification specification, Pageable pageable);
 }
 ```
-BoardRepository.class
+- ex)BoardRepository.class
 ```java
 public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSpecificationExecutor<BoardEntity> {
-// @Modifying 엔티티를 직접 접근하여 수정하는 방식도 사용해 보았다.
+  // @Modifying 어노테이션을 통한 작성된 쿼리 변경 직접 수행
   @Modifying
   @Query(value = "update BoardEntity b set b.boardHits=b.boardHits+1 where b.id=:id")
   void updateHits(@Param("id") Long id);
@@ -170,7 +168,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 }
 ```
 이외 @Transactional 어노테이션을 통해 메서드 레벨 트랜잭션 관리 등을 구현 해보았으며 Spring Data JPA를 통해 JPA 기반으로 데이터 액세스 계층을 추상화하며 ORM 기반한 구조로 프로젝트를 구현하였다.
-(Spring Data JPA가 디폴트 구현체로 Hibernate를 제공하기에 구현체는 Hibernate를 사용 하였다.)
+(Spring Data JPA가 디폴트 구현체로 Hibernate를 제공하기에 구현체는 Hibernate를 사용하였다.)
 
 
 ## 2. 사용자인증
@@ -192,7 +190,7 @@ public class SecurityConfig {
 
   public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil, RefreshRepository refreshRepository, RoleRepository roleRepository, RoleUserRepository roleUserRepository, UserRepository userRepository) {
         
-  ...중략
+  ...
   // authenticationManager 를 Bean로 등록하고 DaoAuthenticationProvider에 customUserDetailsService를 등록
   // 패스워드 암호화를 위해 bCryptPasswordEncoder 선언 후 등록
  @Bean
@@ -209,9 +207,7 @@ public class SecurityConfig {
   public BCryptPasswordEncoder bCryptPasswordEncoder() {
     return new BCryptPasswordEncoder();
   }
-  
-  ...중략
-  
+  ...
     http.csrf((auth) -> auth.disable());
 
     http.formLogin((auth) -> auth.disable());
@@ -233,18 +229,18 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/admin/*").hasAnyRole("ADMIN", "MANAGER")
                     .anyRequest().authenticated());
 
-        // 로그인 필터 호출 전 JWTFilter 호츌
+    // 로그인 필터 호출 전 JWTFilter 호츌
     http
             .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
-        // UsernamePasswordAuthenticationFilter 커스텀 LoginFilter로 교체
+    // UsernamePasswordAuthenticationFilter 커스텀 LoginFilter로 교체
     http
             .addFilterAt(new LoginFilter(authenticationManager(bCryptPasswordEncoder()), jwtUtil, refreshRepository, roleUserRepository, userRepository), UsernamePasswordAuthenticationFilter.class);
             
-        // 로그아웃 필터 호출 전 CustomLogoutFilter 호츌
+    // 로그아웃 필터 호출 전 CustomLogoutFilter 호츌
     http
             .addFilterBefore(new CustomLogoutFilter(jwtUtil, refreshRepository), LogoutFilter.class);
-    ...생략
+    ...
 ```
 Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만들고 인증이 필요한 페이지와 인증 후에도 특정 권한이 필요한 페이지를 추가 해주었다.
 로그인을 위해 UsernamePasswordAuthenticationFilter 상속받는 커스텀 LoginFilter를 추가해 주었다.
@@ -962,8 +958,3 @@ public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
         "reserveUpdatedTime": null
     }
 ```
-
-
-
-## 5. 결론 및 향후 계획
-JavaScript 라이브러리인 react와 react 기반 프레임워크인 nextjs를 통해 예전에 진행했던 예약 플젝트의 일부를 구현 해보았다. 이번 프로젝트는 react와 nextjs를 처음 접해보고 사용기에 Pages Router를 통해 구현 하였으며

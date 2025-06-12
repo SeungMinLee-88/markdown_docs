@@ -20,22 +20,19 @@ FullCalendar 라이브러리를 통한 달력 UI 표현, react createRef를 이�
 <br /><br />
 # - 특이사항
 - Next.js의 Pages Router를 통해 구현 하였으며 공식 문서의 경우 App Router 사용을 권장 하나 Next.js를 처음 접할 경우 Pages Router를 통한 구현이 추천되어 Pages Router를 통해 구현 하였으며 향후 App Router 구조로 마이그레이션 진행 해볼 예정
-- 참고 -\
-<https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>\
-<https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>\
+- 참고 URL -\
+<https://dev.to/dcs-ink/nextjs-app-router-vs-pages-router-3p57>
+<https://stackoverflow.com/questions/76570208/what-is-different-between-app-router-and-pages-router-in-next-js>
 <https://www.reddit.com/r/nextjs/comments/1gdxcg5/why_do_you_still_prefer_page_router_over_app/>
 
 - 기본 App 재정의 하여 _app.js를 통한 커스텀 앱 형태로 구현
-- 참고 -\
+- 참고 URL -\
 <https://www.dhiwise.com/post/the-power-of-nextjs-custom-routes-in-modern-web-development>\
 <https://medium.com/@farihatulmaria/what-is-the-purpose-of-the-app-js-and-document-js-files-in-a-next-js-application-397f22fed69e>
 
 - UI는 Semantic UI React 라이브러리를 사용하여 구현
 - 백엔드 부분과 데이터 요청, 응답을 위해 Axios 라이브러리를 사용 
 
-<!-- <details>
-<summary>제목</summary> -->
-<!-- </details> -->
 ## 1. 사용자인증
 ### 1.1 인증처리
 사용자 인증 및 접근 제어는 Spring Security와 JWT 라이브러리를 통해서 구현 하였으며 로그인 성공시 localStorage, sessionStorage에 인증과 권한 확인에 필요한 값을 저장한다.
@@ -92,10 +89,6 @@ export default function MyApp({ Component, pageProps }) {
 ### 1.3 react Context를 통한 자식 컴포넌트로 값 전달
 useEffect를 통한 state 변경 감지 부분 추가는 공유 레이아웃 컴포넌트에서 변경된 state를 값을 사용하기 위함과 이후 react Context를 통한 값 공유 방식을 구현해 보기 위해서이다.  
 (<span style="color:red">**Next.js 13 이후 App Router의 Server Component는 Context Provider를 미지원 하므로 향후 마이그레이션 시에는 Client Component를 이용해 구성해 볼 예정.**</span>)  
-- 참고 -\
-<https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers>  
-<https://nextjs-ko.org/docs/app/building-your-application/rendering/server-components>
-
 
 - UserContext.js
 ```js
@@ -128,7 +121,7 @@ export const UserNameContext = createContext("userNameContext");
 ```
 Context를 선언하고 _app.js에서 Context를 provider로 하위 컴포넌트로 전달하여 다수 컴포넌트나 여러 단계를 거치는 하위 컴포넌트에서 사용자 정보를 사용할 수 있도록 하였다.
 
-- Context 구조
+- UserContext 구조
 ```mermaid
 flowchart TB
   subgraph _app.js
@@ -251,7 +244,7 @@ async function reissueAccessToken()
       )
       .then(function (response) {
         if(response.status === 200){
-          // 리프레시 토큰이 유효하다면 헤더 데이터로 새로운 인증 토큰과 쿠키 데이터로  리프레시 토큰이 발급된다.
+          // 리프레시 토큰이 유효하다면 헤더 데이터로 새로운 인증 토큰과 쿠키 데이터로 리프레시 토큰이 발급된다.
           localStorage.removeItem("access");
           localStorage.setItem("access", response.headers.access);
         }
@@ -431,9 +424,7 @@ const initialState = {
   searchKey: ''
 }
 ```
-reducer를 사용하지 않았다면 3개의 state를 만들고 state를 처리하는 로직을 전부 만들어서 처리해야 하는데 reducer를 통해 loading ,value, searchKey 값을 업데이트하는 로직들을 통합하여 관리 하도록 구현 해보았다.
-- 참고 - <https://ko.react.dev/learn/extracting-state-logic-into-a-reducer>
-
+reducer를 사용하지 않았다면 3개의 state를 만들고 각 state의 변경에 대한 이벤트 핸들러 만들어 구현해야 하는데 reducer를 기능을 통해 loading ,value, searchKey 값을 업데이트하는 로직들을 통합하여 관리 가능하다.
 
 ### 2.2 첨부 파일 처리
 게시판 글쓰기, 수정의 경우 게시글에 첨부 파일을 첨부 하고 이미지 표시, 다운로드 할 수 있는 기능을 추가 했으며 파일 업로드 기능에 react의 useRef를 사용하여 react가 관리하는 DOM 노드에 접근하는 기능을 간단히 구현 해보았다.
@@ -572,8 +563,6 @@ BoardServiceImpl.class
 ![Image](https://github.com/user-attachments/assets/fdd102f9-1d0f-4a23-bce1-f4fbefa848d4)
 
 상세보기에서 첨부된 파일의 타입을 체크하여 이미지일 경우 화면상에 보여 줄수 있도록 state를 만들어 react의 filter 함수를 통해 새로운 새로운 배열을 만들어 할당 할 수 있도록 하였다.
-- 참고 - <https://ko.react.dev/learn/updating-arrays-in-state>
-
 
 #### 2.2.4 게시글 수정시 첨부파일 처리
 - /board/update/[id].js
@@ -666,7 +655,6 @@ public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
 ![Image](https://github.com/user-attachments/assets/abf91a2a-88ce-41ab-b1f2-29d1f9ad2175)
 
 게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 pages/blog/[slug].js url 형태로 접속 가능 하도록 하였다.
-- 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/routing/dynamic-routes>
 
 - /board/detail/[id].js
 ```js
@@ -718,12 +706,10 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
 
 ![Image](https://github.com/user-attachments/assets/f361ae7a-294d-42b5-afa6-809d7cf0bc51)
 
-- 참고 - <https://nextjs-ko.org/docs/pages/building-your-application/data-fetching/get-static-paths>
-
 
 ## 3. 코멘트
 ### 3.1 페이징
-코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.\
+코멘트의 경우 로그인 시 코멘트 입력 폼을 볼 수 있도록 하였고 페이징은 게시판의 페이징과 동일한 방식으로 Pagination 컴포넌트를 통해 구현 하였다.
 또한 자신이 작성한 코멘트일 경우에만 수정 삭제가 가능 하며 다른 사용자가 작성한 코멘트에는 덧글 달기가 가능 하도록 하였다.
 
 - CommentList.js
@@ -819,9 +805,6 @@ next build시에 데이터를 가져와 Static Page를 미리 생성하는것을
     ]
 ```
 코멘트의 경우는 게시판 아이디를 부모키로 가지며 또한 덧글 달기로 부모 코멘트와 자식 코멘트를 가질 수 있어 리스트가 트리 형태로 리턴 되기에 재귀 함수를 통해 리스트 컴포넌트를 만들어 화면에 보여 주도록 하였다.
-- 참고 -\
-<https://ko.react.dev/learn/updating-objects-in-state>\
-<https://ko.react.dev/learn/updating-arrays-in-state>
 
 - CommentList.js
 ```js
@@ -894,7 +877,7 @@ async function getData() {
       },
       params: {
         reserveDate: toolBarState,
-        // 예약 리스트를 요청하는 api url에 toolBarState 값을 전달하여 원하는 월에 해당하는 예약 리스트만 가져오게 하였다.
+        // 예약 리스트를 요청하는 api url에 년월(ex- 202507) 값을 전달하여 원하는 월에 해당하는 예약 리스트만 가져오게 하였다.
         reserveUserId: userId
       },
     }
@@ -1029,5 +1012,3 @@ const handleTimeChange = (e) => {
 }
 
 ```
-## 5. 결론 및 향후 계획
-JavaScript 라이브러리인 react와 react 기반 프레임워크인 nextjs를 통해 예전에 진행했던 예약 플젝트의 일부를 구현 해보았다. 이번 프로젝트는 react와 nextjs를 처음 접해보고 사용기에 Pages Router를 통해 구현 하였으며

@@ -334,6 +334,3 @@ async userUpdate ({ state, commit }) {
 - 권한 리스트 수정 동작
 
 ![Image](https://github.com/user-attachments/assets/0d49e3cf-a5d5-4123-8e41-9c250024567f)
-
-# - 결론 및 향후 계획
-react와 react 프레임워크인 nextjs를 통해 개인 프로젝트를 구현 후 react와 함께 가장 많이 언급되는 자바스크립트 프레임워크인 Vuejs 접해 보기 위해 해당 프로젝트를 진행 하였으며 실제 대고객 서비스를 제공 하진 않았기에 react에 비하여 렌더링 성능 차이등은 체감 하지 못하였으나 Vuejs 자체 제공 문법에 익숙해 진다면 react에 비해 학습 하기에 접근성이 낮고 생산성이 높을것 같다는 생각을 하였다. 해당 프로젝트에서는 Vuejs의 일부 기능만을 사용하여 진행 하였기 때문에 향후에는 Nuxt.js 프레임워크와 상태관리 라이브러리인 Pinia를 학습 할 예정이다.

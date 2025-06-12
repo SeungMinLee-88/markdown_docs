@@ -1,7 +1,7 @@
 # - 프로젝트 개요
 예전 PHP 프레임워크인 Laravel을 통해 개발한 회의실 예약 프로젝트의 일부 기능을 프론트 영역은 react와 react 프레임워크인 Next.js, 백엔드 영역은 Spring Boot, Spring Data JPA, Spring Security 등을 통해 구현해 보았으며 해당 문서에서는 백엔드 부분에 대해 중점적으로 다루었다.
 # - 개발기간
-- 25.04 ~ 25.05(약 1.5개월)\
+- 25.04 ~ 25.05(약 1.5개월)
 # - 개발환경
 - JAVA v1.8
 - Spring Boot, Spring Data Jpa v3.4.3
@@ -10,7 +10,7 @@
 - gradle v8.13
 - lombok 등 라이브러리 및 Mysql DB
 # - 주요기능
-- 사용자인증
+- 사용자인증: \
 Spring Security를 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 및 refresh 토큰 발급, 재발급 기능
 - 게시판 :\
 게시판 CRUD 기능, Pageable 인터페이스를 통한 페이징 처리, Specification을 통한 검색 기능, 첨부 파일 처리
@@ -36,7 +36,7 @@ Spring Security를 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 
 ![Image](https://github.com/user-attachments/assets/45dccb1d-cf3d-4d53-b10e-c414cc9fc6e0)
 
 ### 1.3 예약
-사용자는 여러 예약을 가질 수 있으므로 사용자와 예약은 1:N 관계이며 예약은 여러개의 예약시간을 가질 수 있고 예약시간 역시 여러 예약에 할당 될 수 있으 예약과 예약시간은 N:N 관계이며 이를 표현 하기 위해 중간 테이블인 reserve_time 테이블을 두어 예약이 추가 될 시 reserve_time 테이블에 예약 아이디와 예약시간 아이디를 가진 데이터가 추가 되어야 한다.
+사용자는 여러 예약을 가질 수 있으므로 사용자와 예약은 1:N 관계이며 예약은 여러개의 예약시간을 가질 수 있고 예약시간 역시 여러 예약에 할당 될 수 있으므로 예약과 예약시간은 N:N 관계이며 이를 표현 하기 위해 중간 테이블인 reserve_time 테이블을 두어 예약이 추가 될 시 reserve_time 테이블에 예약 아이디와 예약시간 아이디를 가진 데이터가 추가 되어야 한다.
 
 ![Image](https://github.com/user-attachments/assets/9fa9f89c-41be-4505-93e1-3622724819aa)
 
@@ -45,7 +45,7 @@ Spring Security를 통한 사용자 인증 및 권한 제어, JWT 인증 토큰 
 ### 2.1 생성자 패턴
 프로젝트는 특정한 형태의 생성자가 필요한 경우 직접 생성자를 선언하거나 Lombok 어노테이션을 사용하여 빌터 패턴을 사용하여 구현 하였다.
 
-- BoardDTO.class
+- ex)BoardDTO.class
 ```java
 // 페이징 처리를 위해 직접 선언
 public BoardDTO(Long id, String boardWriter, String boardTitle, int boardHits, LocalDateTime boardCreatedTime) {
@@ -69,14 +69,14 @@ public BoardDTO(Long id, String boardWriter, String boardTitle, int boardHits, L
     return boardDTO;
   }
 
-- BoardEntity.class
+- ex)BoardEntity.class
 ```java
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "board")
 public class BoardEntity extends BaseEntity {
-        ... 중략
+        ...
   // 빌더패턴을 통한 구현
     public static BoardEntity toSaveEntity(BoardDTO boardDTO) {
     return BoardEntity.builder()
@@ -107,7 +107,7 @@ public class ReserveEntity extends BaseEntity {
   private String userName;
 
 
-// 관계 어노테이션을 통한 엔티티 매핑
+  // 관계 어노테이션을 통한 엔티티 매핑
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")
   private UserEntity userEntity;
@@ -138,7 +138,7 @@ userRepository.findById(userDto.getId());
 
 public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
         
-// JPA에서 제공되는 쿼리 메서드를 통해 사용자 정보 조회
+  // JPA에서 제공되는 쿼리 메서드를 통해 사용자 정보 조회
   Boolean existsByLoginId(String loginId);
 
   UserEntity findByLoginId(String loginId);
@@ -157,7 +157,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
 - ex)BoardRepository.class
 ```java
 public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSpecificationExecutor<BoardEntity> {
-  // @Modifying 어노테이션을 통한 작성된 쿼리 변경 직접 수행
+  // @Modifying 어노테이션을 붙여 @Query에서 작성된 변경 쿼리 직접 수행
   @Modifying
   @Query(value = "update BoardEntity b set b.boardHits=b.boardHits+1 where b.id=:id")
   void updateHits(@Param("id") Long id);
@@ -168,7 +168,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 }
 ```
 이외 @Transactional 어노테이션을 통해 메서드 레벨 트랜잭션 관리 등을 구현 해보았으며 Spring Data JPA를 통해 JPA 기반으로 데이터 액세스 계층을 추상화하며 ORM 기반한 구조로 프로젝트를 구현하였다.
-(Spring Data JPA가 디폴트 구현체로 Hibernate를 제공하기에 구현체는 Hibernate를 사용하였다.)
+(Spring Data JPA가 디폴트 구현체로 Hibernate를 제공하기에 구현체는 Hibernate를 사용)
 
 
 ## 2. 사용자인증
@@ -233,7 +233,7 @@ public class SecurityConfig {
     http
             .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
-    // UsernamePasswordAuthenticationFilter 커스텀 LoginFilter로 교체
+    // UsernamePasswordAuthenticationFilter를 커스텀 LoginFilter로 교체
     http
             .addFilterAt(new LoginFilter(authenticationManager(bCryptPasswordEncoder()), jwtUtil, refreshRepository, roleUserRepository, userRepository), UsernamePasswordAuthenticationFilter.class);
             
@@ -266,9 +266,9 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  ...중략
+  ...
   
-  // 사용자 인증 시도 시 LoginFilter 클래스에서 attemptAuthentication를 호출하고 UsernamePasswordAuthenticationToken에 사용자 아이디와 패스워드, 권한을 저장하고 authenticationManager를 통해 인증을 시도
+    // 사용자 인증 시도 시 LoginFilter 클래스에서 attemptAuthentication를 호출하고 UsernamePasswordAuthenticationToken에 사용자 아이디와 패스워드, 권한을 저장하고 authenticationManager를 통해 인증을 시도
       RoleDTO roleDTO = new RoleDTO();
       ModelMapper mapper = new ModelMapper();
 
@@ -288,7 +288,7 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
 
 - CustomUserDetailsService.class
 ```java
-// authenticationManager를 인증을 시도 하면 SecurityConfig에서 authenticationProvider.setUserDetailsService(customUserDetailsService)를 통해 customUserDetailsService를 등록 해두었으니 CustomUserDetailsService.class를 호출하게 되고 사용자를 인증 처리 한다.
+// authenticationManager를 통해 인증을 시도 하면 SecurityConfig에서 authenticationProvider.setUserDetailsService(customUserDetailsService)를 통해 customUserDetailsService를 등록 해두었으니 CustomUserDetailsService.class를 호출하게 되고 사용자를 인증 처리 한다.
  @Override
   public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
 
@@ -311,7 +311,7 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
 ```
 
 ```java
-// 인증이 성공하면 AbstractAuthenticationProcessingFilter의 successfulAuthentication를 재정의 하여 JWT 토큰을 반환 한다.
+// AbstractAuthenticationProcessingFilter의 successfulAuthentication를 재정의 하여 인증이 성공하면 JWT 토큰을 반환 하도록 하였다..
 protected void successfulAuthentication (HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
 
     String userName = authentication.getName();
@@ -331,6 +331,7 @@ protected void successfulAuthentication (HttpServletRequest request, HttpServlet
     response.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS" );
     response.setHeader("Access-Control-Allow-Origin", "localhost:3000" );
     // 사용자 화면에서 사용자 이름을 사용하기 위해 Expose-Headers를 추가하여 Header에 값을 담아 리턴하도록 하였다.
+    // Expose-Headers를 추가하지 않으면 사용자 아이디와 인증 토큰만 리턴 되기 때문.
     response.setHeader("Access-Control-Expose-Headers", "userName, access" );
     response.setHeader("access", access );
     response.setHeader("userName", userName );
@@ -392,9 +393,9 @@ public class JWTFilter extends OncePerRequestFilter {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       return;
     }
-    ... 중략
+    ...
     
-    // 유효기간 이내의 액세스 토큰이라면 토큰에서 사용자 정보와 권한 정보를 가져온다.
+    // 유효기간 이내의 유효한 인증 토큰이라면 토큰에서 사용자 정보와 권한 정보를 가져온다.
     UserEntity userEntity = new UserEntity();
     userEntity.setUserName(userName);
     List<RoleEntity> roleEntity = new ArrayList<>();
@@ -470,7 +471,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String username = jwtUtil.getUsername(refresh);
         List<String> role = jwtUtil.getRole(refresh);
 
-        // 새로운 액세스 토큰과 리프레시 토큰을 발급
+        // 새로운 인증 토큰과 리프레시 토큰을 발급
         String newAccess = jwtUtil.createJwt("access", username, role, 600000L);
         String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
@@ -547,7 +548,7 @@ BoardServiceImpl.class
     // SearchCriteria 객체에 컨트롤러로 부터 받은 params를 인자로 주고 BoardSpecification 객체를 SearchCriteria 객체를 인자로 주어 생성
     Specification<BoardEntity> specification = new BoardSpecification(new SearchCriteria(params.get("searchKey"), params.get("searchValue")));
     
-    // Pageable과 값들은 필요한 PageRequest으 매개변수로 담아 리포지토리로 넘겨주면 페이징 처리된 결과가 리턴된다.
+    // Pageable로 전달 받은 값과, 현제 페이지 값을 PageRequest으 매개변수로 담아 리포지토리로 넘겨주면 페이징 처리된 결과가 리턴된다.
     Page<BoardEntity> boardEntities = boardRepository.findAll(specification, PageRequest.of(page, pageable.getPageSize(), pageable.getSort()));
 
     Page<BoardDTO> boardDTOList = boardEntities.map(board -> new BoardDTO(board.getId(), board.getBoardWriter(), board.getBoardTitle(), board.getBoardHits(), board.getCreatedTime()));
@@ -712,7 +713,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 - RestBoardController.class
 ```java
 @PostMapping("/boardSave")
-// 사용자 화면에서 multipart/form-data 형식의 form 데이터가 전송 될 것이므로 MultipartFile[] boardFile 형식의 데이터를 RequestParam 받아 주어야 한다.
+  // 사용자 화면에서 multipart/form-data 형식의 form 데이터가 전송 될 것이므로 MultipartFile[] boardFile 형식의 데이터를 RequestParam 받아 주어야 한다.
     public ResponseEntity<BoardPostResponse> boardSave(@RequestParam("boardTitle") String boardTitle, @RequestParam("boardWriter") String boardWriter, @RequestParam("boardContents") String boardContents, @RequestParam(name="boardFile", required = false) MultipartFile[] boardFile) throws IOException {
         BoardDTO boardDTO = new BoardDTO();
         boardDTO.setBoardTitle(boardTitle);
@@ -760,7 +761,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
       ...
   }
 ```
-게시글의 첨부파일 삭제 시 해당 게시글의 첨부파일 존재 여부를 확인하고 모든 첨부 파일 삭제 시 파일 첨부여부를 false로 업데이트 하여 사용자 화면의 첨부리스트 노출 여부를 결정 할 수 있도록 하였다. 
+게시글의 첨부파일 삭제 시 해당 게시글의 첨부파일 존재 여부를 확인하고 모든 첨부 파일 삭제 시 파일 첨부여부를 false로 업데이트 하여 사용자 화면의 첨부파일 리스트 노출 여부를 결정 할 수 있도록 하였다. 
 - RestBoardController.class
 ```java
 // 파일 삭제 처리 컨트롤러
@@ -803,8 +804,7 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long>, JpaSp
 ![Image](https://github.com/user-attachments/assets/406b7a8d-919d-43ba-9e04-f3b0fb6253fd)
 
 ## 4. 코멘트
-코멘트도 기본적인 CRUD 기능을 구현 하였으며 게시판과 같이 Pageable 인터페이스를 통해 페이징 처리를 하였으며 코멘트의 경우 답글 기능으로 자기 참조 관계 설정 및 리스트 트리 구현 하였다. 
-
+코멘트도 기본적인 CRUD 기능을 구현 하였으며 게시판과 같이 Pageable 인터페이스를 통해 페이징 처리를 하였으며 코멘트의 경우 답글 기능으로 자기 참조 관계 설정 및 리스트 트리를 구현 하였다. 
 
 ### 4.1 코멘트 - 리스트 트리
 
@@ -915,14 +915,17 @@ RestCommentController.class
             "childrenComments": []
         }
 ```
-화면 이미지
+
+- 코멘트 사용자 화면
+
+![Image](https://github.com/user-attachments/assets/fc42b747-e65f-43d6-9069-d35d87f4478d)
 
 ## 5. 예약
-예약 역시 기본적인 CRUD 기능을 구현 하였으며 예약의 경우 1개 예약에 여러 예약 시간이 존재 할 수 있으며 예약 시간 역시 여러 다수의 예약에 할당 될 수 있으므로 N:N 관계가 되며 N:N 관계가 가진 이슈로 인에 중간 테이블인 reserve_time 테이블로 관리 되도록 구현 하였다.
+예약 역시 기본적인 CRUD 기능을 구현 하였으며 예약의 경우 1개 예약에 여러 예약 시간이 존재 할 수 있으며 예약 시간 역시 다수의 예약에 할당 될 수 있으므로 N:N 관계가 되며 N:N 관계가 가진 이슈로 인에 중간 테이블인 reserve_time 테이블로 관리 되도록 구현 하였다.
 
 
 ### 5.1 예약 - 예약과 예약 시간
-erd
+![Image](https://github.com/user-attachments/assets/3cfe9ac9-be13-4dd2-ab44-20720f8537db)
 
 - ReserveTimeEntity.class
 ```java
@@ -931,7 +934,7 @@ ReserveTimeEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 중간 엔티티인 예약시간 예약과 시간을 N:1로 가지도록 매칭
+    // 중간 엔티티인 예약시간 엔티티 예약과 시간을 N:1로 가지도록 매칭
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reserve_id")
     private ReserveEntity reserveEntity;
@@ -939,9 +942,9 @@ ReserveTimeEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "time_id")
     private TimeEntity timeEntity;
-    ... 생략
+    ...
 ```
-- ReserveServiceImpl
+- ReserveServiceImpl.class
 ```java
 @Override
     public ReserveDTO reserveSave(ReserveDTO reserveDTO){
@@ -955,13 +958,11 @@ ReserveTimeEntity extends BaseEntity {
 
             // 예약을 저장 할때는 선택된 시간 리스트들을 반복문으로 돌며 중간 테이블인 예약시간 테이블에 저장 하게 된다.
             for(int i = 0; i < reserveDTO.getReserveTimeSave().size(); i++) {
-                System.out.println("timeDtoList : " + reserveDTO.getReserveTimeSave().get(i));
                 TimeEntity timeEntity = timeRepository.findById(reserveDTO.getReserveTimeSave() .get(i)).get();
                 ReserveTimeEntity reserveTimeEntity = ReserveTimeEntity.toSaveEntity(reserveEntity, timeEntity,reserveDTO);
                 reserveTimeRepository.save(reserveTimeEntity);
             }
             ModelMapper mapper = new ModelMapper();
-
             ReserveDTO reserveDTO1  = mapper.map(reserveEntitys, new TypeToken<ReserveDTO>(){}.getType());
 
             return reserveDTO1;
@@ -972,16 +973,17 @@ ReserveTimeEntity extends BaseEntity {
     }
 ```
 
-- ReserveRepository
+- ReserveRepository.class
 ```java
 public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
 
-... 중략
+  ...
   // 예약과 예약시간의 중간 테이블을 두고 쿼리 메소드를 통해 예약 데이터를 가져올 때 예약 시간도 가져 올 수 있도록 하였다.
     List<ReserveEntity> findByReserveDateContainingAndReserveUserIdContaining(String reserveDate, String reserveUserId);
 }
 
 ```
+- 예약 데이터 리턴 형태
 ```json
 {
         "id": 6,
@@ -1022,3 +1024,14 @@ public interface ReserveRepository extends JpaRepository<ReserveEntity, Long> {
         "reserveUpdatedTime": null
     }
 ```
+리턴된 데이터를 통해 사용자 화면에서 캘린터에 예약 리스트를 예약 시간을 포함하여 보여 줄수 있고 특정 예약 수정 시 예약된 시간과 예약 이유와 같은 예약 데이터를 수정 폼에서 보여 주어 수정 기능을 구현 할 수 있도록 하였다.
+
+- 예약 사용자 화면
+
+![Image](https://github.com/user-attachments/assets/da3477e0-5c6d-48c8-8760-7c52a60b647a)
+
+## 5. 기타사항
+Spring Boot와 Spring Data 라이브러리의 모듈을 통해 프로젝트를 구현 해보았으며 일반적인 세션기반 CRUD 게시판 프로젝트의 내용은 해당 문서에서 설명하지 않았으며 생성자 패턴, ORM 기반 구현 등도 사용자, 게시판, 코멘트, 예약의 내용에 중복되어 구현 되었기에 특이 사항만 기술 하였다. 프로젝트의 프론트 부분은 Next.js 기반으로 구축하여 상세한 기능에 대해서는 아래 URL을 통해 확인이 가능하다.
+
+- GithHub Url : 
+<https://github.com/SeungMinLee-88/nextjs_prj>

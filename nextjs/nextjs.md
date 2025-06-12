@@ -654,7 +654,7 @@ public List<BoardFileDTO> fileDelete(Long fileId, Long boardId) {
 
 ![Image](https://github.com/user-attachments/assets/abf91a2a-88ce-41ab-b1f2-29d1f9ad2175)
 
-게시판의 상세보기와 수정 페이지는 nextjs의 동적 라우트로 생성 하여 pages/blog/[slug].js url 형태로 접속 가능 하도록 하였다.
+게시판의 상세보기와 수정 페이지는 Next.js의 동적 라우트로 생성 하여 pages/blog/[slug].js url 형태로 접속 가능 하도록 하였다.
 
 - /board/detail/[id].js
 ```js

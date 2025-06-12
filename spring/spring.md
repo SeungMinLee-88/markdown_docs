@@ -246,6 +246,10 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
 로그인을 위해 UsernamePasswordAuthenticationFilter 상속받는 커스텀 LoginFilter를 추가해 주었다.
 
 ### 2.2 사용자 인증 및 토큰 발급
+- 스프링 시큐리티의 인증 구조
+
+![Image](https://github.com/user-attachments/assets/995ff7ee-1dfd-488a-9178-c73ba92abee4)
+
 - LoginFilter.class
 ```java
 @Override
@@ -265,7 +269,7 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
   ...중략
   
   // 사용자 인증 시도 시 LoginFilter 클래스에서 attemptAuthentication를 호출하고 UsernamePasswordAuthenticationToken에 사용자 아이디와 패스워드, 권한을 저장하고 authenticationManager를 통해 인증을 시도
-  RoleDTO roleDTO = new RoleDTO();
+      RoleDTO roleDTO = new RoleDTO();
       ModelMapper mapper = new ModelMapper();
 
       List<SimpleGrantedAuthority> updatedAuthorities = new ArrayList<SimpleGrantedAuthority>();
@@ -284,7 +288,7 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
 
 - CustomUserDetailsService.class
 ```java
-// authenticationManager를 인증을 시도 하면 앞서 SecurityConfig 에서 authenticationProvider.setUserDetailsService(customUserDetailsService) 부분을 통해 customUserDetailsService를 등록 해두었으니 CustomUserDetailsService.class를 호출하게 되고 사용자를 인증 처리 한다.
+// authenticationManager를 인증을 시도 하면 SecurityConfig에서 authenticationProvider.setUserDetailsService(customUserDetailsService)를 통해 customUserDetailsService를 등록 해두었으니 CustomUserDetailsService.class를 호출하게 되고 사용자를 인증 처리 한다.
  @Override
   public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
 
@@ -308,7 +312,6 @@ Security 라이브러리를 사용하기 위해 SecurityConfig 클래스를 만�
 
 ```java
 // 인증이 성공하면 AbstractAuthenticationProcessingFilter의 successfulAuthentication를 재정의 하여 JWT 토큰을 반환 한다.
-
 protected void successfulAuthentication (HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
 
     String userName = authentication.getName();
@@ -336,15 +339,27 @@ protected void successfulAuthentication (HttpServletRequest request, HttpServlet
   }
 
 ```
+- 인증 성공 시
+
+![Image](https://github.com/user-attachments/assets/9a62388e-b4d3-4c7c-987e-3497450beb91)
+
+![Image](https://github.com/user-attachments/assets/f0492bae-53af-4bed-8e00-088ce1d23df1)
+
+- 인증 실패 시
+
+![Image](https://github.com/user-attachments/assets/c756ec0f-a4bb-4305-a50a-8444e520d4c8)
 
 ### 2.3 인증 사용자 처리
 인증 성공 시 액세스 토큰과 리프레시 토큰을 발급하여 헤더에 인증 정보와 쿠키로 리프레시 토큰을 리턴한다. 인증 토큰을 가진 사용자가 페이지 접근 시 addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class) 부분을 통해 JWTFilter 필터를 통해 인증 여부를 확인 한다.
+
+- 스프링 시큐리티의 인증 구조
+
+![Image](https://github.com/user-attachments/assets/7c7eb81d-a52f-46d8-bd1c-00a544b01bc0)
 
 - JWTFilter.class
 ```java
 
 // Filter 클래스 implements 방식이 아닌 OncePerRequestFilter 상속 받는 방식으로 구현
-
 public class JWTFilter extends OncePerRequestFilter {
 
   private final JWTUtil jwtUtil;
@@ -356,14 +371,14 @@ public class JWTFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-// 요청 헤더에서 액세스 토큰 존재 여부를 확인 한다.
+    // 요청 헤더에서 액세스 토큰 존재 여부를 확인 한다.
     String accessToken = request.getHeader("access");
     if (accessToken == null) {
       filterChain.doFilter(request, response);
       return;
     }
 
-// 토큰 존재 시 토큰의 만료 여부를 확인한다.
+    // 토큰 존재 시 토큰의 만료 여부를 확인한다.
     try {
       jwtUtil.isExpired(accessToken);
     } catch (ExpiredJwtException e) {
@@ -397,7 +412,6 @@ public class JWTFilter extends OncePerRequestFilter {
   }
 }
 ```
-
 ```java
                     .requestMatchers(
                                 "/"
@@ -414,12 +428,22 @@ public class JWTFilter extends OncePerRequestFilter {
 ```
 
 인증된 사용자는 requestMatchers를 통해 권한을 확인 후 페이지의 접근을 제어한다
-- 권한이 있는 사용자
 
-- 권한이 없는 사용자
+- 권한이 있는 사용자 접근 시(토큰 내용)
+
+![Image](https://github.com/user-attachments/assets/4d4ff1a5-0732-40fd-be85-dc0b5e654cd6)
+
+![Image](https://github.com/user-attachments/assets/b1516e1b-d936-47eb-a04b-f0ed5fd917bb)
+
+- 권한이 없는 사용자 접근 시(토큰 내용)
+
+![Image](https://github.com/user-attachments/assets/e6e88283-0ed0-493a-9b6d-0b2cc573a6bc)
+
+![Image](https://github.com/user-attachments/assets/0fc2100f-24cc-479f-9d69-31e77c574b70)
 
 ### 2.3 토큰 재발급
 사용자 인증 액세스 토큰이 만료될 경우 리프레시 토큰을 통해 토큰을 재발급 받을 수 있는 기능도 구현 해보았다. 서버의 경우 리프레시을 DB 상에 저장 되도록 구현 하였다.
+
 - ReissueController
 ```java
 @PostMapping("/reIssueToken")
@@ -431,9 +455,9 @@ public class JWTFilter extends OncePerRequestFilter {
                 refresh = cookie.getValue();
             }
         }
-        ... 중략
+        ...
         
-        // 요청된 리프레시 토큰이 서버에 존재하는지 확인
+        // 요청된 리프레시 토큰이 DB에 존재하는지 확인
          Boolean isExist = refreshRepository.existsByRefresh(refresh);
         if (!isExist) {
             return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
@@ -442,7 +466,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String username = jwtUtil.getUsername(refresh);
         List<String> role = jwtUtil.getRole(refresh);
 
-// 새로운 액세스 토큰과 리프레시 토큰을 발급
+        // 새로운 액세스 토큰과 리프레시 토큰을 발급
         String newAccess = jwtUtil.createJwt("access", username, role, 600000L);
         String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
